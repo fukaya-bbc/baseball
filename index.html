@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>深谷第一高校野球部 打撃データ分析</title>
+<meta name="theme-color" content="#0075C6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="深谷一 打撃">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<script src="config.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb; --page:#f9f9f7;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --neutral:#f0efec;
+  --cold-1:#9ec5f4; --cold-2:#3987e5; --cold-3:#1c5cab;
+  --hot-1:#f5aba6;  --hot-2:#e34948;  --hot-3:#a62a2a;
+  --accent:#0075C6; --brand-red:#E10110;
+  --zone-fill:rgba(0,117,198,0.06); --sz-fill:rgba(0,117,198,0.14);
+  --chip:#f0efec; --chip-on:#0075C6;
+  --crit:#d03b3b;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --surface-1:#1a1a19; --page:#0d0d0d;
+    --text-primary:#f0efec; --text-secondary:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --neutral:#383835;
+    --cold-1:#1c5cab; --cold-2:#2a78d6; --cold-3:#5598e7;
+    --hot-1:#a62a2a;  --hot-2:#d03b3b;  --hot-3:#e66767;
+    --accent:#2E95E0; --brand-red:#F0484F;
+    --zone-fill:rgba(46,149,224,0.10); --sz-fill:rgba(46,149,224,0.22);
+    --chip:#2c2c2a; --chip-on:#2E95E0;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19; --page:#0d0d0d;
+  --text-primary:#f0efec; --text-secondary:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --neutral:#383835;
+  --cold-1:#1c5cab; --cold-2:#2a78d6; --cold-3:#5598e7;
+  --hot-1:#a62a2a;  --hot-2:#d03b3b;  --hot-3:#e66767;
+  --accent:#2E95E0; --brand-red:#F0484F;
+  --zone-fill:rgba(46,149,224,0.10); --sz-fill:rgba(46,149,224,0.22);
+  --chip:#2c2c2a; --chip-on:#2E95E0;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--page); color:var(--text-primary);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5; padding-bottom:84px;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px}
+
+header{position:sticky;top:0;z-index:20;background:var(--surface-1);border-bottom:1px solid var(--border)}
+header .inner{max-width:720px;margin:0 auto;padding:9px 14px;display:flex;align-items:center;gap:9px}
+.logo{height:36px;width:auto;display:block;flex:none;background:#fff;border-radius:6px;padding:1px}
+.ttl{min-width:0}
+.ttl h1{font-size:14.5px;margin:0;font-weight:700;white-space:nowrap}
+.ttl .st{font-size:10.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap}
+header .sub{font-size:11px;color:var(--muted);margin-left:auto;text-align:right;line-height:1.35;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:359px){header .sub{display:none} .ttl h1{font-size:13px} .logo{height:32px}}
+.themebtn{border:1px solid var(--border);background:transparent;color:var(--text-secondary);
+  border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;font-family:inherit}
+
+#banner{display:none;max-width:720px;margin:10px auto 0;padding:10px 13px;border-radius:10px;
+  background:var(--zone-fill);border:1px solid var(--border);font-size:12.5px;
+  color:var(--text-secondary);line-height:1.6}
+#banner.on{display:block}
+
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--surface-1);
+  border-top:1px solid var(--border);display:flex;padding:6px 8px 10px;gap:6px;justify-content:center}
+nav.tabs button{flex:1;max-width:160px;border:0;background:transparent;color:var(--text-secondary);
+  font-family:inherit;font-size:12px;padding:8px 4px;border-radius:10px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:550}
+nav.tabs button .ic{font-size:17px;line-height:1}
+nav.tabs button[aria-selected="true"]{background:var(--zone-fill);color:var(--accent)}
+
+section.panel{display:none;padding-top:14px}
+section.panel.on{display:block}
+
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.card>h2{font-size:13px;margin:0 0 10px;font-weight:650;color:var(--text-secondary);letter-spacing:.02em}
+.card>h2 .hint{font-weight:400;color:var(--muted);font-size:11px;margin-left:6px}
+
+label.fld{display:block;font-size:12px;color:var(--text-secondary);margin:0 0 5px;font-weight:550}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+input[type=text],input[type=date],select{width:100%;padding:10px;border:1px solid var(--axis);
+  border-radius:10px;background:var(--surface-1);color:var(--text-primary);font-family:inherit;font-size:15px}
+button.btn{border:1px solid var(--border);background:var(--accent);color:#fff;border-radius:10px;
+  padding:11px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;width:100%}
+button.btn.sec{background:transparent;color:var(--text-primary);border-color:var(--axis)}
+button.btn.dgr{background:transparent;color:var(--crit);border-color:var(--crit)}
+button.btn:disabled{opacity:.4;cursor:not-allowed}
+.btnrow{display:flex;gap:8px;margin-top:10px}
+.btnrow>*{flex:1}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--axis);background:var(--chip);color:var(--text-primary);border-radius:999px;
+  padding:11px 15px;font-size:13.5px;font-family:inherit;cursor:pointer;font-weight:550;
+  white-space:nowrap;min-height:44px}
+.chip[aria-pressed="true"]{background:var(--chip-on);border-color:var(--chip-on);color:#fff}
+
+.zonewrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.zonetop,.zonebot{font-size:11.5px;color:var(--muted);font-weight:650}
+.zonehdr{display:flex;justify-content:space-between;align-items:baseline;width:100%;
+  max-width:400px;font-size:11.5px;color:var(--muted);font-weight:650;padding:0 3px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:4px;
+  width:100%;max-width:400px;aspect-ratio:1;padding:4px;border-radius:12px;background:var(--grid)}
+.cell{border:0;border-radius:5px;background:var(--surface-1);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;font-family:inherit;font-size:16px;font-weight:650;
+  color:var(--axis);padding:0;position:relative;min-height:0}
+.cell.ball{font-size:12px}
+.cell.sz{background:var(--sz-fill);color:var(--accent)}
+.cell[aria-pressed="true"]{background:var(--accent);color:#fff;z-index:2;
+  outline:4px solid var(--accent);outline-offset:-4px}
+.szbox{grid-area:2/2/5/5;pointer-events:none;border:2.5px solid var(--accent);
+  border-radius:8px;opacity:.5;z-index:1}
+.zonelegend{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
+
+.plate{width:100%;max-width:400px;display:block;margin-top:2px}
+.plate .pl{fill:var(--surface-1);stroke:var(--axis);stroke-width:2.5;stroke-linejoin:round}
+.plate .bx{fill:var(--zone-fill);stroke:var(--axis);stroke-width:1.5;stroke-dasharray:5 4}
+.plate .fig{fill:var(--accent)}
+.plate .batt{stroke:var(--text-secondary);stroke-width:4;stroke-linecap:round}
+.plate .lb{fill:var(--text-secondary);font-size:13px;font-weight:650;font-family:inherit}
+.plate .lbm{fill:var(--muted);font-size:11px;font-weight:600;font-family:inherit}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;max-width:270px;margin:0 auto}
+.bcell{aspect-ratio:1;border:1px solid var(--axis);border-radius:11px;background:var(--surface-1);
+  cursor:pointer;font-family:inherit;font-size:28px;color:var(--text-primary);display:flex;
+  align-items:center;justify-content:center;padding:0}
+.bcell[aria-pressed="true"]{background:var(--chip-on);border-color:var(--chip-on);color:#fff}
+.bhint{text-align:center;font-size:12px;color:var(--text-secondary);margin-top:8px;min-height:1.5em;font-weight:550}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center}
+.tile .k{font-size:10px;color:var(--muted);font-weight:600}
+.tile .v{font-size:19px;font-weight:650;margin-top:3px;line-height:1.15}
+.tile.hero .v{font-size:27px;color:var(--accent)}
+
+.hm{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:4px;
+  width:100%;max-width:400px;padding:4px;border-radius:12px;background:var(--grid)}
+.hc{aspect-ratio:1;border-radius:4px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;position:relative;overflow:hidden;border:0;font-family:inherit;padding:0}
+.hc .a{font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.1}
+.hc .n{font-size:9px;opacity:.85;font-variant-numeric:tabular-nums;line-height:1.1}
+.hc.low::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(45deg,transparent 0 4px,rgba(0,0,0,.22) 4px 5px)}
+.hc.empty{background:var(--surface-1)}
+.hc.empty .a{color:var(--muted);font-size:11px;font-weight:500}
+.hmlegend{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted)}
+.hmlegend .sw{width:20px;height:11px;border-radius:2px;border:1px solid var(--border)}
+.hmlegend .grp{display:flex;align-items:center;gap:3px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--grid)}
+th{color:var(--muted);font-size:11px;font-weight:650}
+th:first-child,td:first-child{text-align:left}
+td{font-variant-numeric:tabular-nums;color:var(--text-primary)}
+td.lab{font-variant-numeric:normal;color:var(--text-secondary);font-weight:550}
+tbody tr:last-child td{border-bottom:0}
+td .mk{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;
+  vertical-align:middle;border:1px solid var(--border)}
+.dim{color:var(--muted)}
+
+.palist{display:flex;flex-direction:column;gap:7px}
+.pa{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);
+  border-radius:10px;background:var(--surface-1);font-size:13px}
+.pa .ord{font-size:11px;color:var(--muted);font-weight:650;min-width:22px}
+.pa .bd{flex:1;min-width:0}
+.pa .bd .t{font-weight:600}
+.pa .bd .s{font-size:11px;color:var(--muted);margin-top:1px}
+.pa .tag{font-size:11px;font-weight:650;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.pa .tag.h{background:var(--brand-red);color:#fff}
+.pa .tag.o{background:var(--chip);color:var(--text-secondary)}
+.pa .del{border:0;background:transparent;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 4px;font-family:inherit}
+
+.empty-note{color:var(--muted);font-size:13px;text-align:center;padding:18px 8px}
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+.cur{font-size:13px;color:var(--text-secondary);margin-bottom:10px}
+.cur b{color:var(--text-primary);font-weight:650}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:420px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ro .wo{display:none}
+.ao{display:none}
+nav.tabs button.ao{display:none}
+body.adm .ao{display:block}
+body.adm .btnrow.ao{display:flex}
+body.adm nav.tabs button.ao{display:flex}
+
+#login{position:fixed;inset:0;z-index:100;background:var(--page);display:none;
+  align-items:center;justify-content:center;padding:22px}
+#login.on{display:flex}
+#login .lbox{width:100%;max-width:380px;background:var(--surface-1);border:1px solid var(--border);
+  border-radius:16px;padding:24px}
+#login .llogo{height:72px;display:block;margin:0 auto 14px;background:#fff;border-radius:8px;padding:2px}
+#login h2{font-size:17px;margin:0;text-align:center;font-weight:700}
+#login .lsub{font-size:12px;color:var(--muted);text-align:center;margin:3px 0 18px;font-weight:600}
+#login .lerr{display:none;background:rgba(225,1,16,.08);border:1px solid var(--brand-red);
+  color:var(--brand-red);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;line-height:1.6}
+#login .lerr.on{display:block}
+
+#menu{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45);display:none;
+  align-items:flex-end;justify-content:center}
+#menu.on{display:flex}
+#menu .box{background:var(--surface-1);border-radius:16px 16px 0 0;padding:18px 16px 26px;
+  width:100%;max-width:460px;border:1px solid var(--border)}
+#menu .mhead{font-size:14px;font-weight:650;text-align:center;padding-bottom:4px}
+
+.urow{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--border);
+  border-radius:10px;background:var(--surface-1);font-size:13px;margin-bottom:7px}
+.urow .ub{flex:1;min-width:0}
+.urow .un{font-weight:600}
+.urow .ui{font-size:11px;color:var(--muted);margin-top:1px}
+.urow .ur{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap;
+  background:var(--chip);color:var(--text-secondary)}
+.urow .ur.adm{background:var(--accent);color:#fff}
+
+#modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:none;
+  align-items:center;justify-content:center;padding:20px}
+#modal.on{display:flex}
+#modal .box{background:var(--surface-1);border-radius:14px;padding:18px;max-width:380px;width:100%;
+  border:1px solid var(--border)}
+#modal .msg{font-size:14px;line-height:1.65;margin-bottom:14px;white-space:pre-line}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <img class="logo" src="logo.png" alt="深谷第一高校野球部">
+    <div class="ttl"><h1>深谷第一高校 野球部</h1><div class="st">打撃データ分析</div></div>
+    <span class="sub" id="curPlayerLbl"></span>
+    <button class="themebtn" id="menuBtn" type="button" aria-label="メニュー">⋯</button>
+  </div>
+</header>
+<div id="banner"></div>
+
+<div class="wrap">
+
+<!-- ============ 入力 ============ -->
+<section class="panel on" id="p-input">
+
+  <div class="card">
+    <h2>選手</h2>
+    <div class="row"><div><label class="fld" for="selPlayer">打者</label><select id="selPlayer"></select></div></div>
+    <div class="btnrow ao"><button class="btn sec" id="btnNewPlayer" type="button">打者を追加（ログインなし）</button></div>
+    <div id="newPlayerForm" style="display:none;margin-top:10px">
+      <div class="row">
+        <div style="flex:2"><label class="fld" for="npName">選手名</label>
+          <input type="text" id="npName" placeholder="例）山田 太郎"></div>
+        <div><label class="fld">打席</label>
+          <div class="chips" id="npBats">
+            <button class="chip" type="button" data-v="R" aria-pressed="true">右打ち</button>
+            <button class="chip" type="button" data-v="L" aria-pressed="false">左打ち</button>
+          </div></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="btnSavePlayer" type="button">登録</button>
+        <button class="btn sec" id="btnCancelPlayer" type="button">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>試合</h2>
+    <div class="row"><div><label class="fld" for="selGame">対戦</label><select id="selGame"></select></div></div>
+    <div class="btnrow wo"><button class="btn sec" id="btnNewGame" type="button">試合を追加</button></div>
+    <div id="newGameForm" style="display:none;margin-top:10px">
+      <div class="row">
+        <div><label class="fld" for="ngDate">日付</label><input type="date" id="ngDate"></div>
+        <div style="flex:2"><label class="fld" for="ngOpp">相手校</label>
+          <input type="text" id="ngOpp" placeholder="例）県立一高"></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="btnSaveGame" type="button">登録</button>
+        <button class="btn sec" id="btnCancelGame" type="button">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card wo">
+    <h2>投手<span class="hint">交代したら追加</span></h2>
+    <div class="cur" id="pitcherCur">—</div>
+    <div class="row"><div><label class="fld" for="selPitcher">登板中</label><select id="selPitcher"></select></div></div>
+    <div class="btnrow"><button class="btn sec" id="btnNewPitcher" type="button">投手を追加・交代</button></div>
+    <div id="newPitcherForm" style="display:none;margin-top:12px">
+      <label class="fld">投げ腕</label>
+      <div class="chips" id="npThrows" style="margin-bottom:11px">
+        <button class="chip" type="button" data-v="R" aria-pressed="true">右投げ</button>
+        <button class="chip" type="button" data-v="L" aria-pressed="false">左投げ</button>
+      </div>
+      <label class="fld">投げ方</label>
+      <div class="chips" id="npArm" style="margin-bottom:11px">
+        <button class="chip" type="button" data-v="over" aria-pressed="true">オーバー</button>
+        <button class="chip" type="button" data-v="three" aria-pressed="false">スリークォーター</button>
+        <button class="chip" type="button" data-v="side" aria-pressed="false">サイド</button>
+        <button class="chip" type="button" data-v="under" aria-pressed="false">アンダー</button>
+      </div>
+      <label class="fld">ストレートの速さ<span style="font-weight:400;color:var(--muted)">（主観）</span></label>
+      <div class="chips" id="npVelo" style="margin-bottom:11px">
+        <button class="chip" type="button" data-v="fast" aria-pressed="false">速い</button>
+        <button class="chip" type="button" data-v="normal" aria-pressed="true">普通</button>
+        <button class="chip" type="button" data-v="slow" aria-pressed="false">遅い</button>
+      </div>
+      <label class="fld" for="npLabel">メモ<span style="font-weight:400;color:var(--muted)">（背番号など・任意）</span></label>
+      <input type="text" id="npLabel" placeholder="例）背番号1">
+      <div class="btnrow">
+        <button class="btn" id="btnSavePitcher" type="button">登録して登板</button>
+        <button class="btn sec" id="btnCancelPitcher" type="button">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card wo">
+    <h2>打席を記録</h2>
+    <div class="cur" id="paCtx">—</div>
+
+    <label class="fld">① 打った球のコース<span style="font-weight:400;color:var(--muted)">（25分割・青枠の内側がストライク）</span></label>
+    <div class="zonewrap">
+      <div class="zonehdr"><span id="zoneL">—</span><span>高め</span><span id="zoneR">—</span></div>
+      <div class="grid5" id="zoneGrid"></div>
+      <div class="zonebot">低め</div>
+      <svg class="plate" id="plate" viewBox="0 0 400 96" aria-hidden="true"></svg>
+    </div>
+    <div class="zonelegend" id="zoneLegend"></div>
+
+    <div style="margin-top:14px">
+      <label class="fld">② 判定</label>
+      <div class="chips" id="selJudge">
+        <button class="chip" type="button" data-v="strike" aria-pressed="false">ストライク</button>
+        <button class="chip" type="button" data-v="ball" aria-pressed="false">ボール球</button>
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート）</span></label>
+      <div class="grid3" id="breakGrid"></div>
+      <div class="bhint" id="breakHint"></div>
+    </div>
+
+    <div style="margin-top:14px"><label class="fld">④ 結果</label><div class="chips" id="selResult"></div></div>
+
+    <div style="margin-top:14px" id="outSafeWrap">
+      <label class="fld">⑤ アウト / セーフ</label>
+      <div class="chips" id="selOutSafe">
+        <button class="chip" type="button" data-v="out" aria-pressed="false">アウト</button>
+        <button class="chip" type="button" data-v="safe" aria-pressed="false">セーフ（安打）</button>
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="fld">⑥ 補足<span style="font-weight:400;color:var(--muted)">（任意・複数可）</span></label>
+      <div class="chips" id="selNotes"></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn" id="btnSavePA" type="button">この打席を記録</button>
+      <button class="btn sec" id="btnClearPA" type="button">入力をクリア</button>
+    </div>
+    <div class="note" id="paNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>この試合の打席</h2>
+    <div id="gamePAs"></div>
+  </div>
+</section>
+
+<!-- ============ 分析 ============ -->
+<section class="panel" id="p-stats">
+  <div class="card">
+    <h2>絞り込み</h2>
+    <div class="filters">
+      <div><label class="fld" for="fPlayer">打者</label><select id="fPlayer"></select></div>
+      <div><label class="fld" for="fOpp">相手校</label><select id="fOpp"></select></div>
+      <div><label class="fld" for="fThrows">投げ腕</label><select id="fThrows"></select></div>
+      <div><label class="fld" for="fArm">投げ方</label><select id="fArm"></select></div>
+      <div><label class="fld" for="fVelo">球速（主観）</label><select id="fVelo"></select></div>
+      <div><label class="fld" for="fBreak">球種</label><select id="fBreak"></select></div>
+      <div><label class="fld" for="fJudge">判定</label><select id="fJudge"></select></div>
+      <div><label class="fld" for="fSide">コース左右</label><select id="fSide"></select></div>
+    </div>
+    <div class="btnrow"><button class="btn sec" id="btnResetF" type="button">絞り込みを解除</button></div>
+  </div>
+
+  <div class="card">
+    <h2>成績</h2>
+    <div class="tiles">
+      <div class="tile hero"><div class="k">打率</div><div class="v" id="sAvg">—</div></div>
+      <div class="tile"><div class="k">打席</div><div class="v" id="sPA">—</div></div>
+      <div class="tile"><div class="k">打数</div><div class="v" id="sAB">—</div></div>
+      <div class="tile"><div class="k">安打</div><div class="v" id="sH">—</div></div>
+    </div>
+    <div class="note" id="sNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>コース別打率<span class="hint">9分割＋ボールゾーン</span></h2>
+    <div id="hmBase" class="cur"></div>
+    <div class="zonewrap">
+      <div class="zonehdr"><span id="hmL">—</span><span>高め</span><span id="hmR">—</span></div>
+      <div class="hm" id="heatmap"></div>
+      <div class="zonebot">低め</div>
+    </div>
+    <div class="hmlegend" id="hmLegend"></div>
+    <div class="note">各セルは「打率／安打-打数」。斜線は打数3未満で、まだ判断材料が足りないコースです。</div>
+  </div>
+
+  <div class="card"><h2>コース左右別</h2><div class="scrollx"><table id="tSide"></table></div></div>
+  <div class="card"><h2>高さ別</h2><div class="scrollx"><table id="tHeight"></table></div></div>
+  <div class="card"><h2>球種別<span class="hint">打者から見た曲がり方</span></h2>
+    <div class="scrollx"><table id="tBreak"></table></div></div>
+  <div class="card"><h2>投手タイプ別</h2><div class="scrollx"><table id="tPitcher"></table></div></div>
+  <div class="card"><h2>打球の質</h2><div class="scrollx"><table id="tQuality"></table></div>
+    <div class="note">打率だけでなく打球の内容を見ます。強い打球が多いのに打率が低いコースは、運に恵まれていないだけかもしれません。</div></div>
+</section>
+
+<!-- ============ データ ============ -->
+<section class="panel" id="p-data">
+  <div class="card">
+    <h2>共有のしかた</h2>
+    <div class="note" style="margin-top:0" id="shareNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>書き出し</h2>
+    <div class="btnrow">
+      <button class="btn sec" id="btnExportCsv" type="button">CSVで書き出す</button>
+      <button class="btn sec" id="btnExport" type="button">JSONで書き出す</button>
+    </div>
+    <div class="btnrow"><button class="btn sec" id="btnCopyCsv" type="button">CSVをコピー</button></div>
+    <div class="btnrow wo">
+      <label class="btn sec" style="text-align:center;display:block">
+        JSONを読み込む
+        <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+      </label>
+    </div>
+    <div class="note" id="ioNote"></div>
+  </div>
+
+  <div class="card wo">
+    <h2>アカウント管理<span class="hint">ログインできる人</span></h2>
+    <div id="userList"></div>
+    <div class="btnrow"><button class="btn sec" id="btnAddUser" type="button">アカウントを追加</button></div>
+    <div id="addUserForm" style="display:none;margin-top:12px">
+      <label class="fld" for="auName">① 名前</label>
+      <input type="text" id="auName" placeholder="例）山田 太郎">
+
+      <label class="fld" style="margin-top:13px">② 権限</label>
+      <div class="chips" id="auRole">
+        <button class="chip" type="button" data-v="player" aria-pressed="true">選手</button>
+        <button class="chip" type="button" data-v="admin" aria-pressed="false">監督・コーチ</button>
+        <button class="chip" type="button" data-v="viewer" aria-pressed="false">閲覧のみ</button>
+      </div>
+
+      <div id="auBatsRow" style="margin-top:13px">
+        <label class="fld">③ 打席</label>
+        <div class="chips" id="auBats">
+          <button class="chip" type="button" data-v="R" aria-pressed="true">右打ち</button>
+          <button class="chip" type="button" data-v="L" aria-pressed="false">左打ち</button>
+        </div>
+        <div class="note" style="margin-top:7px">選手として打者一覧にも登録されます。打席の記録を始めるのに、ほかの登録は要りません。</div>
+      </div>
+
+      <div id="auCoachBats" style="display:none;margin-top:13px">
+        <div class="chips">
+          <button class="chip" type="button" id="auAlsoPlayer" aria-pressed="false">この人の打撃データも取る</button>
+        </div>
+      </div>
+
+      <label class="fld" for="auId" style="margin-top:13px">④ ログインID<span style="font-weight:400;color:var(--muted)">（半角英数）</span></label>
+      <input type="text" id="auId" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="例）yamada">
+      <label class="fld" for="auPw" style="margin-top:11px">⑤ パスワード<span style="font-weight:400;color:var(--muted)">（8文字以上）</span></label>
+      <input type="text" id="auPw" autocomplete="off">
+
+      <div class="btnrow">
+        <button class="btn" id="btnSaveUser" type="button">登録</button>
+        <button class="btn sec" id="btnCancelUser" type="button">やめる</button>
+      </div>
+      <div class="note" id="auNote"></div>
+    </div>
+  </div>
+
+  <div class="card wo">
+    <h2>打者の一覧<span class="hint">打撃データを取る人</span></h2>
+    <div id="playerList"></div>
+  </div>
+
+  <div class="card wo">
+    <h2>お試し</h2>
+    <div class="note" style="margin-top:0">動きを確認したいときはサンプルを入れてみてください。既存データは消えません。</div>
+    <div class="btnrow"><button class="btn sec" id="btnSample" type="button">サンプルデータを追加</button></div>
+  </div>
+
+  <div class="card wo">
+    <h2>全消去</h2>
+    <div class="note" style="margin-top:0">保存した全データを消します。戻せません。</div>
+    <div class="btnrow"><button class="btn dgr" id="btnWipe" type="button">すべて消す</button></div>
+  </div>
+</section>
+
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true"  data-p="p-input"><span class="ic">✎</span>入力</button>
+  <button role="tab" aria-selected="false" data-p="p-stats"><span class="ic">▦</span>分析</button>
+  <button role="tab" class="ao" aria-selected="false" data-p="p-data"><span class="ic">⇅</span>データ</button>
+</nav>
+
+<div id="login" class="on"><div class="lbox">
+  <img class="llogo" src="logo.png" alt="">
+  <h2>深谷第一高校 野球部</h2>
+  <p class="lsub">打撃データ分析</p>
+  <div class="lerr" id="loginErr"></div>
+
+  <div id="loginBody">
+    <label class="fld" for="liId">ID</label>
+    <input type="text" id="liId" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label class="fld" for="liPw" style="margin-top:11px">パスワード</label>
+    <input type="password" id="liPw" autocomplete="current-password">
+    <div class="btnrow"><button class="btn" id="liGo" type="button">ログイン</button></div>
+    <div class="note" id="loginNote">IDとパスワードは監督・コーチから受け取ってください。</div>
+  </div>
+
+  <div id="setupBody" style="display:none">
+    <div class="note" style="margin:0 0 14px">
+      はじめての設定です。<b>監督・コーチのアカウント</b>を作ります。<br>
+      部員やほかのコーチは、このあとアプリの中から追加できます。
+    </div>
+    <label class="fld" for="suName">お名前</label>
+    <input type="text" id="suName" placeholder="例）後藤 貴明" autocomplete="off">
+    <label class="fld" for="suId" style="margin-top:11px">ログインID<span style="font-weight:400;color:var(--muted)">（半角英数）</span></label>
+    <input type="text" id="suId" placeholder="例）goto" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
+    <label class="fld" for="suPw" style="margin-top:11px">パスワード<span style="font-weight:400;color:var(--muted)">（8文字以上）</span></label>
+    <input type="password" id="suPw" autocomplete="new-password">
+    <label class="fld" for="suPw2" style="margin-top:11px">パスワード（確認）</label>
+    <input type="password" id="suPw2" autocomplete="new-password">
+    <div class="btnrow"><button class="btn" id="suGo" type="button">このアカウントで始める</button></div>
+    <div class="note" id="suNote"></div>
+  </div>
+</div></div>
+
+<div id="menu"><div class="box">
+  <div class="mhead" id="whoami">—</div>
+  <div class="btnrow"><button class="btn sec" id="mTheme" type="button">表示を切り替える</button></div>
+  <div class="btnrow"><button class="btn sec" id="mPass" type="button">パスワードを変更</button></div>
+  <div id="pwForm" style="display:none;margin-top:4px">
+    <label class="fld" for="pwCur">いまのパスワード</label>
+    <input type="password" id="pwCur" autocomplete="current-password">
+    <label class="fld" for="pwNew" style="margin-top:9px">新しいパスワード<span style="font-weight:400;color:var(--muted)">（8文字以上）</span></label>
+    <input type="password" id="pwNew" autocomplete="new-password">
+    <div class="btnrow"><button class="btn" id="pwGo" type="button">変更する</button></div>
+    <div class="note" id="pwNote"></div>
+  </div>
+  <div class="btnrow"><button class="btn sec" id="mLogout" type="button">ログアウト</button></div>
+  <div class="btnrow"><button class="btn" id="mClose" type="button">閉じる</button></div>
+</div></div>
+
+<div id="modal"><div class="box">
+  <div class="msg" id="modalMsg"></div>
+  <div class="btnrow">
+    <button class="btn" id="modalOk" type="button">はい</button>
+    <button class="btn sec" id="modalNo" type="button">やめる</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   定数
+   ============================================================ */
+const ARMS   = {over:"オーバー", three:"スリークォーター", side:"サイド", under:"アンダー"};
+const VELOS  = {fast:"速い", normal:"普通", slow:"遅い"};
+const THROWS = {R:"右投げ", L:"左投げ"};
+const BATS   = {R:"右打ち", L:"左打ち"};
+
+const BREAKS = [
+  {k:"NW",arrow:"↖"}, {k:"N",arrow:"↑"}, {k:"NE",arrow:"↗"},
+  {k:"W", arrow:"←"}, {k:"straight",arrow:"●"}, {k:"E",arrow:"→"},
+  {k:"SW",arrow:"↙"}, {k:"S",arrow:"↓"}, {k:"SE",arrow:"↘"}
+];
+
+const RESULTS = [
+  {k:"fly",label:"フライ系",batted:true},
+  {k:"liner",label:"ライナー系",batted:true},
+  {k:"hardGrounder",label:"強いゴロ系",batted:true},
+  {k:"weakGrounder",label:"弱いゴロ系",batted:true},
+  {k:"swingingK",label:"空振り三振",batted:false},
+  {k:"calledK",label:"見逃し三振",batted:false},
+  {k:"walk",label:"四球",batted:false},
+  {k:"hbp",label:"死球",batted:false}
+];
+const RMAP = Object.fromEntries(RESULTS.map(r=>[r.k,r]));
+
+const NOTES = [
+  {k:"cleanHit",label:"クリーンヒット"}, {k:"infieldHit",label:"強襲ヒット"},
+  {k:"homerun",label:"ホームラン"}, {k:"timely",label:"タイムリー"},
+  {k:"advance",label:"進塁打"}, {k:"tagUpRBI",label:"タッチアップで得点"},
+  {k:"sacBunt",label:"送りバント"}, {k:"safetyBunt",label:"セーフティバント"},
+  {k:"sacFly",label:"犠飛"}, {k:"onError",label:"エラーで出塁"},
+  {k:"fieldersChoice",label:"野選"}
+];
+const NMAP = Object.fromEntries(NOTES.map(n=>[n.k,n.label]));
+// この補足が付いていれば安打として数える
+const HIT_NOTES = ["cleanHit","infieldHit","homerun","timely"];
+
+/* ============================================================
+   派生ロジック
+   ============================================================ */
+// 表示は捕手の後ろから投手方向を見た向き。右打者は図の左側に立つ。
+function inOut(col, bats){
+  const fromIn = bats === "R" ? col : 4 - col;
+  if (fromIn <= 1) return "in";
+  if (fromIn === 2) return "mid";
+  return "out";
+}
+const SIDE_LBL = {in:"イン", mid:"真ん中", out:"アウト"};
+function heightBand(row){ return row <= 1 ? "high" : (row === 2 ? "mid" : "low"); }
+const H_LBL = {high:"高め", mid:"真ん中", low:"低め"};
+function inStrikeZone(row,col){ return row>=1 && row<=3 && col>=1 && col<=3; }
+function zone9(row,col){ return inStrikeZone(row,col) ? (row-1)*3 + (col-1) + 1 : null; }
+
+function breakRel(k, bats){
+  if (k === "straight") return "none";
+  if (k === "N") return "rise";
+  if (k === "S") return "drop";
+  const viewerRight = (k==="E"||k==="NE"||k==="SE");
+  const away = bats === "R" ? viewerRight : !viewerRight;
+  const diag = (k==="NE"||k==="SE"||k==="NW"||k==="SW");
+  if (!diag) return away ? "away" : "inside";
+  const down = (k==="SE"||k==="SW");
+  if (away) return down ? "awayDrop" : "awayRise";
+  return down ? "insideDrop" : "insideRise";
+}
+const REL_LBL = {
+  none:"ストレート（曲がらない）", rise:"ストレート（伸びる）", drop:"落ちる",
+  away:"横に逃げる", awayDrop:"逃げて落ちる", awayRise:"逃げて伸びる",
+  inside:"内に食い込む", insideDrop:"食い込んで落ちる", insideRise:"食い込んで伸びる"
+};
+const REL_ORDER = ["none","rise","away","awayDrop","awayRise","inside","insideDrop","insideRise","drop"];
+const REL_HINT = {
+  none:"ストレート", rise:"ストレート・伸び系", drop:"カーブ・フォーク系",
+  away:"スライダー・カット系", awayDrop:"スライダー・カーブ系", awayRise:"カット系",
+  inside:"シュート・ツーシーム系", insideDrop:"シンカー系", insideRise:"シュート系"
+};
+// 曲がり方を、その打者から見た矢印に戻す
+const REL_ARROW_R = {none:"●", rise:"↑", drop:"↓", away:"→", inside:"←",
+  awayDrop:"↘", awayRise:"↗", insideDrop:"↙", insideRise:"↖"};
+const MIRROR = {"→":"←","←":"→","↘":"↙","↙":"↘","↗":"↖","↖":"↗"};
+function relArrow(rel, bats){
+  const a = REL_ARROW_R[rel] || "";
+  return bats === "L" ? (MIRROR[a] || a) : a;
+}
+
+function breakAxis(k){
+  if (k==="straight") return "none";
+  if (k==="N"||k==="S") return "vert";
+  if (k==="E"||k==="W") return "horiz";
+  return "diag";
+}
+const AXIS_LBL = {none:"ストレート", vert:"縦", horiz:"横", diag:"斜め"};
+
+function isAtBat(pa){
+  if (pa.result==="walk" || pa.result==="hbp") return false;
+  if (pa.notes.includes("sacBunt") || pa.notes.includes("sacFly")) return false;
+  return true;
+}
+function isHit(pa){
+  if (!isAtBat(pa)) return false;
+  if (pa.notes.some(n=>HIT_NOTES.includes(n))) return true;
+  if (pa.outSafe !== "safe") return false;
+  if (pa.notes.includes("onError") || pa.notes.includes("fieldersChoice")) return false;
+  return true;
+}
+function avgOf(list){
+  const ab = list.filter(isAtBat).length;
+  const h  = list.filter(isHit).length;
+  return {pa:list.length, ab, h, avg: ab ? h/ab : null};
+}
+function fmtAvg(a){ return (a===null||a===undefined) ? "—" : a.toFixed(3).replace(/^0/,""); }
+
+/* ============================================================
+   共有ストア
+   ============================================================ */
+const COLLS = ["players","games","pitchers","pas"];
+const CACHE = {players:{}, games:{}, pitchers:{}, pas:{}};
+let DB = {players:[], games:[], pitchers:[], pas:[]};
+
+let ME = null;               // ログイン中の利用者
+let canWrite = null;         // 記録を書けるか
+let canAdmin = false;        // 監督・コーチか
+let storeReady = false;
+let lastSync = 0;
+let pollTimer = null;
+
+function rebuild(){
+  DB.players  = Object.values(CACHE.players);
+  DB.games    = Object.values(CACHE.games);
+  DB.pitchers = Object.values(CACHE.pitchers);
+  DB.pas      = Object.values(CACHE.pas).map(p => (p.notes = Array.isArray(p.notes)?p.notes:[], p));
+}
+const uid = () => Math.random().toString(36).slice(2,10);
+
+/* ---- サーバーとのやりとり ---- */
+const API_BASE = String((window.APP_CONFIG && window.APP_CONFIG.API) || "").replace(/\/+$/, "");
+let TOKEN = null;
+try{ TOKEN = localStorage.getItem("bb_token") || null; }catch(e){}
+function setToken(t){
+  TOKEN = t || null;
+  try{ if (t) localStorage.setItem("bb_token", t); else localStorage.removeItem("bb_token"); }catch(e){}
+}
+
+async function api(action, payload){
+  if (!API_BASE || API_BASE.indexOf("ここに") >= 0){
+    const err = new Error("接続先が設定されていません。config.js にCloudflareのアドレスを貼り付けてください。");
+    err.unconfigured = true; throw err;
+  }
+  const headers = {};
+  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const opt = { method: payload ? "POST" : "GET", headers };
+  if (payload){ headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(payload); }
+  const ep = API_BASE + (API_BASE.indexOf("?") >= 0 ? "&" : "?") + "a=" + action;
+  let r;
+  try{ r = await fetch(ep, opt); }
+  catch(e){ const err = new Error("サーバーにつながりません。通信状況を確認してください。"); err.offline = true; throw err; }
+  let d = null;
+  try{ d = await r.json(); }catch(e){}
+  if (!r.ok){
+    const err = new Error((d && d.error) || ("通信に失敗しました（" + r.status + "）"));
+    err.status = r.status;
+    throw err;
+  }
+  return d || {};
+}
+
+// 1件ずつ順番に送る
+const WQ = new Map();
+function queued(key, fn){
+  const prev = WQ.get(key) || Promise.resolve();
+  const next = prev.then(fn, fn);
+  WQ.set(key, next.catch(()=>{}));
+  return next;
+}
+async function put(coll, obj){
+  return queued(coll + "/" + obj.id, async () => {
+    const d = await api("put", {coll, obj});
+    if (d.now) lastSync = Math.max(lastSync, d.now);
+  });
+}
+async function drop(coll, id){
+  return queued(coll + "/" + id, async () => {
+    const d = await api("del", {coll, id});
+    if (d.now) lastSync = Math.max(lastSync, d.now);
+  });
+}
+
+function banner(html){
+  const b = document.getElementById("banner");
+  if (!html){ b.className = ""; b.innerHTML = ""; return; }
+  b.className = "on"; b.innerHTML = html;
+}
+
+/* ---- 読み込みと定期更新 ---- */
+function applyPayload(d){
+  if (d.full){ COLLS.forEach(c => CACHE[c] = {}); }
+  const recs = d.records || {};
+  COLLS.forEach(c => (recs[c] || []).forEach(o => { if (o && o.id) CACHE[c][o.id] = o; }));
+  (d.deleted || []).forEach(([c,id]) => { if (CACHE[c]) delete CACHE[c][id]; });
+  if (d.now) lastSync = Math.max(lastSync, d.now);
+  rebuild();
+}
+
+async function syncNow(quiet){
+  try{
+    const d = await api("load" + (lastSync ? "&since=" + lastSync : ""));
+    applyPayload(d);
+    storeReady = true;
+    if (!quiet) banner("");
+    redrawAll();
+  }catch(e){
+    if (e.status === 401){ showLogin("セッションが切れました。もう一度ログインしてください。"); return; }
+    if (!quiet) banner("データを読み込めませんでした。" + esc(e.message));
+  }
+}
+
+function startPolling(){
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(() => { if (!document.hidden) syncNow(true); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(true); });
+}
+
+function redrawAll(){
+  renderPlayers(); renderGames(); renderPitchers(); renderGamePAs();
+  updateZoneLabels(); updatePANote(); renderPlayerList();
+  if (document.getElementById("p-stats").classList.contains("on")) renderStats();
+}
+
+/* ---- 権限 ---- */
+function applyRole(){
+  document.body.classList.toggle("ro", canWrite === false);
+  document.body.classList.toggle("adm", canAdmin === true);
+  if (!canAdmin && $("#p-data").classList.contains("on")){
+    $$("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.p==="p-input")));
+    $$("section.panel").forEach(s=>s.classList.toggle("on", s.id==="p-input"));
+  }
+  const who = $("#whoami");
+  if (who && ME) who.textContent = ME.name + "（" + ROLE_LBL[ME.role] + "）";
+  const sn = document.getElementById("shareNote");
+  if (!sn) return;
+  sn.innerHTML = canAdmin
+    ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
+      + "・<b>監督・コーチ</b>：すべて操作できます<br>"
+      + "・<b>選手</b>：打席の記録と分析の閲覧。選手名簿やこのタブは触れません<br>"
+      + "・<b>閲覧のみ</b>：分析を見るだけ"
+    : "ログインした人全員で同じデータを見ています。";
+}
+const ROLE_LBL = {admin:"監督・コーチ", player:"選手", viewer:"閲覧のみ"};
+
+/* ============================================================
+   画面の状態
+   ============================================================ */
+const ST = {playerId:null, gameId:null, pitcherId:null,
+  row:null, col:null, judge:null, brk:null, result:null, outSafe:null, notes:new Set()};
+const F = {player:"", opp:"", throws:"", arm:"", velo:"", brk:"", judge:"", side:""};
+
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function note(id,msg){ const el=document.getElementById(id); if(el) el.textContent = msg||""; }
+function curPlayer(){ return DB.players.find(p=>p.id===ST.playerId) || null; }
+function batsOf(id){ const p = DB.players.find(x=>x.id===id); return p ? p.bats : "R"; }
+
+/* ---- ページ内ダイアログ（alert/confirm は使えない） ---- */
+let modalRes = null;
+function ask(msg){
+  return new Promise(res=>{
+    modalRes = res;
+    $("#modalMsg").textContent = msg;
+    $("#modalNo").style.display = "block";
+    $("#modalOk").textContent = "はい";
+    $("#modal").classList.add("on");
+  });
+}
+function tell(msg){
+  return new Promise(res=>{
+    modalRes = res;
+    $("#modalMsg").textContent = msg;
+    $("#modalNo").style.display = "none";
+    $("#modalOk").textContent = "閉じる";
+    $("#modal").classList.add("on");
+  });
+}
+$("#modalOk").addEventListener("click", ()=>{ $("#modal").classList.remove("on"); if(modalRes) modalRes(true); modalRes=null; });
+$("#modalNo").addEventListener("click", ()=>{ $("#modal").classList.remove("on"); if(modalRes) modalRes(false); modalRes=null; });
+
+/* ============================================================
+   タブ / テーマ
+   ============================================================ */
+$$("nav.tabs button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    $$("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", String(x===b)));
+    $$("section.panel").forEach(s=>s.classList.toggle("on", s.id===b.dataset.p));
+    window.scrollTo({top:0});
+    if (b.dataset.p === "p-stats") renderStats();
+    if (b.dataset.p === "p-data")  renderPlayerList();
+  });
+});
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : (cur === "light" ? "" : "dark");
+  if (next) document.documentElement.setAttribute("data-theme", next);
+  else document.documentElement.removeAttribute("data-theme");
+  if ($("#p-stats").classList.contains("on")) renderStats();
+}
+
+/* ============================================================
+   チップ共通
+   ============================================================ */
+function chipGroup(sel, onPick){
+  const host = $(sel);
+  host.addEventListener("click", e=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    Array.from(host.children).forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+    onPick(b.dataset.v);
+  });
+}
+function chipValue(sel){ const on = $(sel).querySelector('.chip[aria-pressed="true"]'); return on ? on.dataset.v : null; }
+function chipSet(sel,v){ Array.from($(sel).children).forEach(c=>c.setAttribute("aria-pressed", String(c.dataset.v===v))); }
+
+/* ============================================================
+   選手
+   ============================================================ */
+chipGroup("#npBats", ()=>{});
+$("#btnNewPlayer").addEventListener("click", ()=>{
+  $("#newPlayerForm").style.display = "block"; $("#npName").value = ""; $("#npName").focus();
+});
+$("#btnCancelPlayer").addEventListener("click", ()=>{ $("#newPlayerForm").style.display="none"; });
+$("#btnSavePlayer").addEventListener("click", async ()=>{
+  const name = $("#npName").value.trim();
+  if (!name){ $("#npName").focus(); return; }
+  const p = {id:uid(), name, bats: chipValue("#npBats") || "R"};
+  try{
+    await put("players", p);
+    CACHE.players[p.id] = p; rebuild();
+    ST.playerId = p.id; F.player = p.id;
+    $("#newPlayerForm").style.display = "none";
+    renderPlayers(); renderAll();
+  }catch(e){ writeFailed(e); }
+});
+
+function renderPlayers(){
+  const sel = $("#selPlayer");
+  if (!DB.players.length){
+    sel.innerHTML = '<option value="">選手を追加してください</option>'; ST.playerId = null;
+  } else {
+    DB.players.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+    if (!DB.players.some(p=>p.id===ST.playerId)) ST.playerId = DB.players[0].id;
+    sel.innerHTML = DB.players.map(p=>
+      `<option value="${p.id}" ${p.id===ST.playerId?"selected":""}>${esc(p.name)}（${BATS[p.bats]}）</option>`).join("");
+  }
+  const p = curPlayer();
+  $("#curPlayerLbl").textContent = p ? `${p.name}・${BATS[p.bats]}` : "";
+  updateZoneLabels();
+}
+$("#selPlayer").addEventListener("change", e=>{ ST.playerId = e.target.value||null; renderPlayers(); renderAll(); });
+
+function renderPlayerList(){
+  const host = $("#playerList"); if(!host) return;
+  if (!DB.players.length){ host.innerHTML = '<div class="empty-note">まだ登録がありません</div>'; return; }
+  host.innerHTML = '<div class="palist">' + DB.players.map(p=>{
+    const n = DB.pas.filter(x=>x.playerId===p.id).length;
+    const u = USERS.find(x=>String(x.id)===String(p.userId||""));
+    const acct = u ? `・ログイン ${esc(u.login)}` : "・ログインなし";
+    return `<div class="pa"><div class="bd"><div class="t">${esc(p.name)}</div>
+      <div class="s">${BATS[p.bats]}・${n}打席${acct}</div></div>
+      <button class="del" data-del="${p.id}" type="button" aria-label="削除">✕</button></div>`;
+  }).join("") + "</div>";
+  host.querySelectorAll("[data-del]").forEach(b=>{
+    b.addEventListener("click", async ()=>{
+      const id = b.dataset.del;
+      const p = DB.players.find(x=>x.id===id);
+      const kids = DB.pas.filter(x=>x.playerId===id);
+      if (!await ask(`${p.name} と ${kids.length} 打席の記録を消します。よろしいですか？`)) return;
+      try{
+        for (const k of kids){ await drop("pas", k.id); delete CACHE.pas[k.id]; }
+        await drop("players", id); delete CACHE.players[id];
+        rebuild(); renderPlayers(); renderPlayerList(); renderAll();
+      }catch(e){ writeFailed(e); }
+    });
+  });
+}
+
+/* ============================================================
+   試合
+   ============================================================ */
+$("#btnNewGame").addEventListener("click", ()=>{
+  $("#newGameForm").style.display = "block";
+  $("#ngDate").value = new Date().toISOString().slice(0,10);
+  $("#ngOpp").value = ""; $("#ngOpp").focus();
+});
+$("#btnCancelGame").addEventListener("click", ()=>{ $("#newGameForm").style.display="none"; });
+$("#btnSaveGame").addEventListener("click", async ()=>{
+  const opp = $("#ngOpp").value.trim();
+  if (!opp){ $("#ngOpp").focus(); return; }
+  const g = {id:uid(), date: $("#ngDate").value || new Date().toISOString().slice(0,10), opponent:opp};
+  try{
+    await put("games", g);
+    CACHE.games[g.id] = g; rebuild();
+    ST.gameId = g.id; ST.pitcherId = null;
+    $("#newGameForm").style.display = "none";
+    renderGames(); renderAll();
+  }catch(e){ writeFailed(e); }
+});
+
+function renderGames(){
+  const sel = $("#selGame");
+  const gs = DB.games.slice().sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+  if (!gs.length){ sel.innerHTML = '<option value="">試合を追加してください</option>'; ST.gameId = null; }
+  else {
+    if (!gs.some(g=>g.id===ST.gameId)) ST.gameId = gs[0].id;
+    sel.innerHTML = gs.map(g=>
+      `<option value="${g.id}" ${g.id===ST.gameId?"selected":""}>${esc(g.date)}　${esc(g.opponent)}</option>`).join("");
+  }
+}
+$("#selGame").addEventListener("change", e=>{
+  ST.gameId = e.target.value||null; ST.pitcherId = null; renderGames(); renderAll();
+});
+
+/* ============================================================
+   投手
+   ============================================================ */
+["#npThrows","#npArm","#npVelo"].forEach(s=>chipGroup(s, ()=>{}));
+$("#btnNewPitcher").addEventListener("click", async ()=>{
+  if (!ST.gameId){ await tell("先に試合を追加してください。"); return; }
+  $("#newPitcherForm").style.display = "block"; $("#npLabel").value = "";
+});
+$("#btnCancelPitcher").addEventListener("click", ()=>{ $("#newPitcherForm").style.display="none"; });
+$("#btnSavePitcher").addEventListener("click", async ()=>{
+  const p = {id:uid(), gameId:ST.gameId,
+    throws: chipValue("#npThrows")||"R", arm: chipValue("#npArm")||"over",
+    velo: chipValue("#npVelo")||"normal", label: $("#npLabel").value.trim(), ts: Date.now()};
+  try{
+    await put("pitchers", p);
+    CACHE.pitchers[p.id] = p; rebuild();
+    ST.pitcherId = p.id;
+    $("#newPitcherForm").style.display = "none";
+    renderPitchers(); renderAll();
+  }catch(e){ writeFailed(e); }
+});
+
+function pitcherName(p){
+  if (!p) return "—";
+  const base = `${THROWS[p.throws]}・${ARMS[p.arm]}・${VELOS[p.velo]}`;
+  return p.label ? `${p.label}（${base}）` : base;
+}
+function renderPitchers(){
+  const sel = $("#selPitcher");
+  const ps = DB.pitchers.filter(p=>p.gameId===ST.gameId).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if (!ps.length){ sel.innerHTML = '<option value="">投手を追加してください</option>'; ST.pitcherId = null; }
+  else {
+    if (!ps.some(p=>p.id===ST.pitcherId)) ST.pitcherId = ps[ps.length-1].id;
+    sel.innerHTML = ps.map((p,i)=>
+      `<option value="${p.id}" ${p.id===ST.pitcherId?"selected":""}>${i+1}人目　${esc(pitcherName(p))}</option>`).join("");
+  }
+  const cur = DB.pitchers.find(p=>p.id===ST.pitcherId);
+  $("#pitcherCur").innerHTML = cur ? `いまの相手は <b>${esc(pitcherName(cur))}</b>` : "投手が未登録です";
+}
+$("#selPitcher").addEventListener("change", e=>{ ST.pitcherId = e.target.value||null; renderPitchers(); renderAll(); });
+
+/* ============================================================
+   コースグリッド
+   ============================================================ */
+function buildZoneGrid(){
+  const g = $("#zoneGrid"); g.innerHTML = "";
+  for (let r=0;r<5;r++) for (let c=0;c<5;c++){
+    const b = document.createElement("button");
+    const sz = inStrikeZone(r,c);
+    b.type="button"; b.className = "cell " + (sz ? "sz" : "ball");
+    b.setAttribute("aria-pressed","false"); b.dataset.r = r; b.dataset.c = c;
+    // 25マスすべてを明示配置する（ストライクゾーンの枠と重ねるため）
+    b.style.gridArea = `${r+1}/${c+1}`;
+    const z = zone9(r,c);
+    b.textContent = sz ? z : "・";
+    b.setAttribute("aria-label", zoneAria(r,c));
+    g.appendChild(b);
+  }
+  const box = document.createElement("div"); box.className = "szbox";
+  g.appendChild(box);
+  g.addEventListener("click", e=>{
+    const b = e.target.closest(".cell"); if(!b) return;
+    Array.from(g.children).forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+    ST.row = +b.dataset.r; ST.col = +b.dataset.c;
+    chipSet("#selJudge", inStrikeZone(ST.row,ST.col) ? "strike" : "ball");
+    ST.judge = chipValue("#selJudge");
+    updatePANote();
+  });
+}
+function zoneAria(r,c){
+  const bats = curPlayer() ? curPlayer().bats : "R";
+  const s = SIDE_LBL[inOut(c,bats)], h = H_LBL[heightBand(r)];
+  return inStrikeZone(r,c) ? `${h}${s}・ストライクゾーン` : `${h}${s}・ボールゾーン`;
+}
+function sideLabels(bats, lSel, rSel){
+  const left  = inOut(0,bats) === "in" ? "イン" : "アウト";
+  const el = $(lSel), er = $(rSel);
+  if (el) el.textContent = left;
+  if (er) er.textContent = (left === "イン" ? "アウト" : "イン");
+}
+function updateZoneLabels(){
+  const inBats = curPlayer() ? curPlayer().bats : "R";
+  sideLabels(inBats, "#zoneL", "#zoneR");
+  sideLabels(F.player ? batsOf(F.player) : inBats, "#hmL", "#hmR");
+  $("#zoneGrid").querySelectorAll(".cell").forEach(b=>
+    b.setAttribute("aria-label", zoneAria(+b.dataset.r, +b.dataset.c)));
+  renderPlate(inBats);
+  $("#zoneLegend").innerHTML = curPlayer()
+    ? `捕手の後ろから見た向きです。${BATS[inBats]}なので、ホームベースの${inOut(0,inBats)==="in"?"左":"右"}に立っています。`
+    : "捕手の後ろから見た向きです。";
+}
+
+// ホームベースと打者の立ち位置（右打者はベースの左）
+function renderPlate(bats){
+  const svg = $("#plate"); if(!svg) return;
+  const onLeft = (bats === "R");
+  const cx   = onLeft ? 128 : 272;
+  const boxX = onLeft ?  98 : 242;
+  const dir  = onLeft ? 1 : -1;                 // ベースのある向き
+  svg.innerHTML =
+    `<rect class="bx" x="${boxX}" y="6" width="60" height="68" rx="4"/>` +
+    `<polygon class="pl" points="180,22 220,22 220,44 200,60 180,44"/>` +
+    `<line class="batt" x1="${cx + dir*3}" y1="44" x2="${cx - dir*17}" y2="16"/>` +
+    `<circle class="fig" cx="${cx}" cy="30" r="9"/>` +
+    `<rect class="fig" x="${cx-8}" y="41" width="16" height="30" rx="8"/>` +
+    `<text class="lb" x="${cx}" y="90" text-anchor="middle">${BATS[bats]}</text>` +
+    `<text class="lbm" x="200" y="78" text-anchor="middle">ホームベース</text>`;
+}
+
+/* ============================================================
+   球種グリッド
+   ============================================================ */
+function buildBreakGrid(){
+  const g = $("#breakGrid"); g.innerHTML = "";
+  BREAKS.forEach(b=>{
+    const el = document.createElement("button");
+    el.type="button"; el.className="bcell"; el.setAttribute("aria-pressed","false");
+    el.dataset.k = b.k; el.textContent = b.arrow; g.appendChild(el);
+  });
+  g.addEventListener("click", e=>{
+    const b = e.target.closest(".bcell"); if(!b) return;
+    Array.from(g.children).forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+    ST.brk = b.dataset.k;
+    const bats = curPlayer() ? curPlayer().bats : "R";
+    const rel = breakRel(ST.brk, bats);
+    $("#breakHint").textContent = `${REL_LBL[rel]}　→　${REL_HINT[rel]}`;
+    Array.from(g.children).forEach(c=>c.setAttribute("aria-label", REL_LBL[breakRel(c.dataset.k,bats)]));
+    updatePANote();
+  });
+}
+
+/* ============================================================
+   結果・補足
+   ============================================================ */
+function buildResults(){
+  const g = $("#selResult");
+  g.innerHTML = RESULTS.map(r=>`<button class="chip" type="button" data-v="${r.k}" aria-pressed="false">${r.label}</button>`).join("");
+  g.addEventListener("click", e=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    Array.from(g.children).forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+    ST.result = b.dataset.v;
+    const batted = RMAP[ST.result].batted;
+    $("#outSafeWrap").style.display = batted ? "block" : "none";
+    if (!batted){
+      ST.outSafe = (ST.result==="walk"||ST.result==="hbp") ? null : "out";
+      chipSet("#selOutSafe","");
+    }
+    updatePANote();
+  });
+  const n = $("#selNotes");
+  n.innerHTML = NOTES.map(x=>`<button class="chip" type="button" data-v="${x.k}" aria-pressed="false">${x.label}</button>`).join("");
+  n.addEventListener("click", e=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    const on = b.getAttribute("aria-pressed")==="true";
+    b.setAttribute("aria-pressed", String(!on));
+    if (on) ST.notes.delete(b.dataset.v); else ST.notes.add(b.dataset.v);
+    // 安打を表す補足を選んだら、アウト/セーフは自動でセーフに
+    if (!on && HIT_NOTES.includes(b.dataset.v) && ST.result && RMAP[ST.result].batted){
+      ST.outSafe = "safe"; chipSet("#selOutSafe","safe");
+    }
+    updatePANote();
+  });
+}
+chipGroup("#selJudge", v=>{ ST.judge=v; updatePANote(); });
+chipGroup("#selOutSafe", v=>{ ST.outSafe=v; updatePANote(); });
+
+/* ============================================================
+   打席の保存
+   ============================================================ */
+function updatePANote(){
+  const p = curPlayer();
+  const g = DB.games.find(x=>x.id===ST.gameId);
+  const pi = DB.pitchers.find(x=>x.id===ST.pitcherId);
+  $("#paCtx").innerHTML = (p&&g&&pi)
+    ? `<b>${esc(p.name)}</b> が <b>${esc(g.opponent)}</b> の <b>${esc(pitcherName(pi))}</b> と対戦`
+    : "選手・試合・投手をそろえてください";
+
+  const miss = [];
+  if (!p) miss.push("選手"); if (!ST.gameId) miss.push("試合"); if (!ST.pitcherId) miss.push("投手");
+  if (ST.row === null) miss.push("コース");
+  if (!ST.brk) miss.push("球種");
+  if (!ST.result) miss.push("結果");
+  if (ST.result && RMAP[ST.result].batted && !ST.outSafe) miss.push("アウト/セーフ");
+
+  $("#btnSavePA").disabled = miss.length > 0;
+  if (miss.length){ note("paNote", "未入力：" + miss.join("・")); return; }
+
+  const probe = {result:ST.result, outSafe:ST.outSafe, notes:[...ST.notes]};
+  const bits = [isAtBat(probe) ? "打数に入ります" : "打数に入りません"];
+  if (isHit(probe)) bits.push("安打として数えます");
+  note("paNote", bits.join("／"));
+}
+
+async function writeFailed(e){
+  if (e && e.status === 401){ showLogin("セッションが切れました。もう一度ログインしてください。"); return; }
+  if (e && e.status === 403){
+    canWrite = false; applyRole();
+    await tell("この操作は、いまのアカウントの権限では行えません。");
+    return;
+  }
+  await tell("保存できませんでした。\n" + ((e && e.message) || "") +
+             "\n通信状況を確認して、もう一度お試しください。");
+}
+
+$("#btnSavePA").addEventListener("click", async ()=>{
+  const pl = curPlayer(); if(!pl) return;
+  const pa = {
+    id:uid(), playerId:ST.playerId, gameId:ST.gameId, pitcherId:ST.pitcherId, ts:Date.now(),
+    row:ST.row, col:ST.col,
+    judge: ST.judge || (inStrikeZone(ST.row,ST.col)?"strike":"ball"),
+    brk:ST.brk, result:ST.result,
+    outSafe: RMAP[ST.result].batted ? ST.outSafe : ((ST.result==="walk"||ST.result==="hbp") ? null : "out"),
+    notes:[...ST.notes], batsAt: pl.bats
+  };
+  try{
+    await put("pas", pa);
+    CACHE.pas[pa.id] = pa; rebuild();
+    clearPA(); renderGamePAs();
+    note("paNote","記録しました。");
+  }catch(e){ writeFailed(e); }
+});
+
+$("#btnClearPA").addEventListener("click", clearPA);
+function clearPA(){
+  ST.row=null; ST.col=null; ST.judge=null; ST.brk=null; ST.result=null; ST.outSafe=null; ST.notes.clear();
+  Array.from($("#zoneGrid").children).forEach(c=>c.setAttribute("aria-pressed","false"));
+  Array.from($("#breakGrid").children).forEach(c=>c.setAttribute("aria-pressed","false"));
+  Array.from($("#selResult").children).forEach(c=>c.setAttribute("aria-pressed","false"));
+  Array.from($("#selNotes").children).forEach(c=>c.setAttribute("aria-pressed","false"));
+  chipSet("#selJudge",""); chipSet("#selOutSafe","");
+  $("#breakHint").textContent = "";
+  $("#outSafeWrap").style.display = "block";
+  updatePANote();
+}
+
+function paSummary(pa){
+  const bats = pa.batsAt || batsOf(pa.playerId);
+  const z = zone9(pa.row,pa.col);
+  const where = `${H_LBL[heightBand(pa.row)]}${SIDE_LBL[inOut(pa.col,bats)]}` + (z!==null?`（${z}）`:"（ボールゾーン）");
+  return {where, rel:breakRel(pa.brk,bats),
+    arrow:(BREAKS.find(b=>b.k===pa.brk)||{}).arrow || "",
+    jd: pa.judge==="ball" ? "ボール球" : "ストライク"};
+}
+
+function renderGamePAs(){
+  const host = $("#gamePAs"); if(!host) return;
+  const list = DB.pas.filter(p=>p.gameId===ST.gameId && p.playerId===ST.playerId).sort((a,b)=>a.ts-b.ts);
+  if (!list.length){ host.innerHTML = '<div class="empty-note">まだ記録がありません</div>'; return; }
+  const s = avgOf(list);
+  host.innerHTML =
+    `<div class="cur">この試合：<b>${s.h}安打 / ${s.ab}打数</b>　打率 <b>${fmtAvg(s.avg)}</b>（${s.pa}打席）</div>` +
+    '<div class="palist">' + list.map((pa,i)=>{
+      const q = paSummary(pa);
+      const tag = isHit(pa) ? '<span class="tag h">安打</span>'
+        : `<span class="tag o">${isAtBat(pa)?"凡退":"打数外"}</span>`;
+      const nt = pa.notes.length ? "・" + pa.notes.map(k=>NMAP[k]).join("・") : "";
+      return `<div class="pa"><div class="ord">${i+1}</div><div class="bd">
+        <div class="t">${RMAP[pa.result].label}${nt}</div>
+        <div class="s">${q.arrow} ${esc(REL_LBL[q.rel])}／${esc(q.where)}・${q.jd}</div>
+        </div>${tag}
+        <button class="del wo" data-del="${pa.id}" type="button" aria-label="削除">✕</button></div>`;
+    }).join("") + "</div>";
+  host.querySelectorAll("[data-del]").forEach(b=>{
+    b.addEventListener("click", async ()=>{
+      if (!await ask("この打席の記録を消します。よろしいですか？")) return;
+      try{ await drop("pas", b.dataset.del); delete CACHE.pas[b.dataset.del]; rebuild(); renderGamePAs(); }
+      catch(e){ writeFailed(e); }
+    });
+  });
+}
+
+/* ============================================================
+   分析：絞り込み
+   ============================================================ */
+function fillFilters(){
+  const opt = (v,l,cur)=>`<option value="${esc(v)}" ${v===cur?"selected":""}>${esc(l)}</option>`;
+  if (!DB.players.some(p=>p.id===F.player)) F.player = DB.players.length ? DB.players[0].id : "";
+  $("#fPlayer").innerHTML = DB.players.map(p=>opt(p.id,`${p.name}（${BATS[p.bats]}）`,F.player)).join("")
+    || '<option value="">—</option>';
+  const opps = [...new Set(DB.games.map(g=>g.opponent))].sort();
+  $("#fOpp").innerHTML    = opt("","すべて",F.opp) + opps.map(o=>opt(o,o,F.opp)).join("");
+  $("#fThrows").innerHTML = opt("","すべて",F.throws) + Object.entries(THROWS).map(([k,v])=>opt(k,v,F.throws)).join("");
+  $("#fArm").innerHTML    = opt("","すべて",F.arm) + Object.entries(ARMS).map(([k,v])=>opt(k,v,F.arm)).join("");
+  $("#fVelo").innerHTML   = opt("","すべて",F.velo) + Object.entries(VELOS).map(([k,v])=>opt(k,v,F.velo)).join("");
+  $("#fBreak").innerHTML  = opt("","すべて",F.brk)
+    + Object.entries(AXIS_LBL).map(([k,v])=>opt("axis:"+k,`曲がり：${v}`,F.brk)).join("")
+    + REL_ORDER.map(k=>opt("rel:"+k, `${relArrow(k, F.player ? batsOf(F.player) : "R")} ${REL_LBL[k]}`, F.brk)).join("");
+  $("#fJudge").innerHTML  = opt("","すべて",F.judge)+opt("strike","ストライク",F.judge)+opt("ball","ボール球",F.judge);
+  $("#fSide").innerHTML   = opt("","すべて",F.side) + Object.entries(SIDE_LBL).map(([k,v])=>opt(k,v,F.side)).join("");
+}
+[["#fPlayer","player"],["#fOpp","opp"],["#fThrows","throws"],["#fArm","arm"],
+ ["#fVelo","velo"],["#fBreak","brk"],["#fJudge","judge"],["#fSide","side"]].forEach(([sel,key])=>{
+  document.addEventListener("change", e=>{
+    if (e.target && e.target.matches && e.target.matches(sel)){ F[key] = e.target.value; renderStats(); }
+  });
+});
+$("#btnResetF").addEventListener("click", ()=>{
+  F.opp=F.throws=F.arm=F.velo=F.brk=F.judge=F.side=""; fillFilters(); renderStats();
+});
+
+function filtered(){
+  const bats = batsOf(F.player);
+  return DB.pas.filter(pa=>{
+    if (pa.playerId !== F.player) return false;
+    const g  = DB.games.find(x=>x.id===pa.gameId);
+    const pi = DB.pitchers.find(x=>x.id===pa.pitcherId);
+    if (F.opp    && (!g  || g.opponent !== F.opp))   return false;
+    if (F.throws && (!pi || pi.throws !== F.throws)) return false;
+    if (F.arm    && (!pi || pi.arm    !== F.arm))    return false;
+    if (F.velo   && (!pi || pi.velo   !== F.velo))   return false;
+    if (F.judge  && pa.judge !== F.judge)            return false;
+    if (F.side   && inOut(pa.col,bats) !== F.side)   return false;
+    if (F.brk){
+      const [kind,val] = F.brk.split(":");
+      if (kind==="axis" && breakAxis(pa.brk) !== val) return false;
+      if (kind==="rel"  && breakRel(pa.brk,bats) !== val) return false;
+    }
+    return true;
+  });
+}
+
+/* ============================================================
+   分析：ヒートマップ
+   ============================================================ */
+const BANDS = [
+  {max:-0.120,v:"--cold-3"}, {max:-0.060,v:"--cold-2"}, {max:-0.020,v:"--cold-1"},
+  {max: 0.020,v:"--neutral"},
+  {max: 0.060,v:"--hot-1"},  {max: 0.120,v:"--hot-2"},  {max: Infinity,v:"--hot-3"}
+];
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function bandColor(d){ for (const b of BANDS) if (d < b.max) return cssVar(b.v); return cssVar("--hot-3"); }
+function inkOn(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex||"");
+  if (!m) return "#0b0b0b";
+  const n = parseInt(m[1],16);
+  const ch = [(n>>16)&255,(n>>8)&255,n&255].map(v=>{ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+  const L = 0.2126*ch[0]+0.7152*ch[1]+0.0722*ch[2];
+  return L > 0.42 ? "#0b0b0b" : "#ffffff";
+}
+
+function renderHeatmap(list, baseline){
+  const g = $("#heatmap"); g.innerHTML = "";
+  const bats = batsOf(F.player);
+  const buckets = {};
+  list.forEach(pa=>{ const k = pa.row+"-"+pa.col; (buckets[k]=buckets[k]||[]).push(pa); });
+
+  for (let r=0;r<5;r++) for (let c=0;c<5;c++){
+    const cell = document.createElement("div");
+    cell.className = "hc";
+    cell.style.gridArea = `${r+1}/${c+1}`;
+    const s = avgOf(buckets[r+"-"+c] || []);
+    const where = `${H_LBL[heightBand(r)]}${SIDE_LBL[inOut(c,bats)]}` + (inStrikeZone(r,c)?"":"・ボールゾーン");
+    if (!s.ab){
+      cell.classList.add("empty");
+      cell.innerHTML = '<span class="a">—</span>';
+      cell.title = `${where}：打数なし`;
+    } else {
+      const d = (baseline===null) ? 0 : (s.avg - baseline);
+      const bg = bandColor(d); cell.style.background = bg;
+      const ink = inkOn(bg);
+      if (s.ab < 3) cell.classList.add("low");
+      cell.innerHTML = `<span class="a" style="color:${ink}">${fmtAvg(s.avg)}</span>`
+                     + `<span class="n" style="color:${ink}">${s.h}-${s.ab}</span>`;
+      cell.title = `${where}：打率 ${fmtAvg(s.avg)}（${s.h}安打/${s.ab}打数`
+                 + (s.ab<3 ? "・打数が少なく参考値" : "") + "）";
+    }
+    cell.setAttribute("aria-label", cell.title);
+    g.appendChild(cell);
+  }
+  const box = document.createElement("div"); box.className = "szbox"; g.appendChild(box);
+
+  $("#hmLegend").innerHTML =
+    "<span>苦手</span>" +
+    ["--cold-3","--cold-2","--cold-1","--neutral","--hot-1","--hot-2","--hot-3"]
+      .map(v=>`<span class="sw" style="background:${cssVar(v)}"></span>`).join("") +
+    "<span>得意</span>" +
+    `<span class="grp" style="margin-left:10px"><span class="sw" style="background:var(--surface-1)"></span>打数なし</span>` +
+    `<span class="grp" style="margin-left:6px"><span class="sw" style="background:${cssVar("--neutral")};background-image:repeating-linear-gradient(45deg,transparent 0 4px,${cssVar("--axis")} 4px 5px)"></span>打数3未満</span>`;
+}
+
+/* ============================================================
+   分析：テーブル
+   ============================================================ */
+function tableOf(sel, headLabel, rows, baseline){
+  const el = $(sel);
+  if (!rows.length){ el.innerHTML = '<tbody><tr><td class="empty-note" colspan="5">該当なし</td></tr></tbody>'; return; }
+  el.innerHTML =
+    `<thead><tr><th>${headLabel}</th><th>打率</th><th>安打</th><th>打数</th><th>打席</th></tr></thead><tbody>` +
+    rows.map(r=>{
+      const d = (baseline===null || r.s.avg===null) ? null : r.s.avg - baseline;
+      const mk = (r.s.ab && d!==null) ? `<span class="mk" style="background:${bandColor(d)}"></span>` : "";
+      const av = r.s.ab ? fmtAvg(r.s.avg) : '<span class="dim">—</span>';
+      const lo = (r.s.ab && r.s.ab < 3) ? ' <span class="dim">※</span>' : "";
+      return `<tr><td class="lab">${mk}${esc(r.label)}</td><td>${av}${lo}</td>
+        <td>${r.s.h}</td><td>${r.s.ab}</td><td>${r.s.pa}</td></tr>`;
+    }).join("") + "</tbody>";
+}
+function groupRows(list, keyFn, order, labelFn){
+  const m = {};
+  list.forEach(pa=>{ const k = keyFn(pa); (m[k]=m[k]||[]).push(pa); });
+  const keys = order ? order.filter(k=>m[k]) : Object.keys(m).sort();
+  return keys.map(k=>({label:labelFn(k), s:avgOf(m[k])}));
+}
+
+/* ============================================================
+   分析：描画
+   ============================================================ */
+function renderStats(){
+  fillFilters(); updateZoneLabels();
+  if (!DB.players.length || !F.player){
+    ["#sAvg","#sPA","#sAB","#sH"].forEach(s=>$(s).textContent="—");
+    note("sNote", storeReady ? "選手を登録して打席を記録すると集計されます。" : "読み込み中です…");
+    $("#heatmap").innerHTML=""; $("#hmLegend").innerHTML=""; $("#hmBase").textContent="";
+    ["#tSide","#tHeight","#tBreak","#tPitcher","#tQuality"].forEach(s=>$(s).innerHTML="");
+    return;
+  }
+  const bats = batsOf(F.player);
+  const list = filtered();
+  const s = avgOf(list);
+  const baseline = s.avg;
+
+  $("#sAvg").textContent = fmtAvg(s.avg);
+  $("#sPA").textContent  = s.pa;
+  $("#sAB").textContent  = s.ab;
+  $("#sH").textContent   = s.h;
+
+  note("sNote", s.pa
+    ? `絞り込み後の${s.pa}打席のうち、四球・死球・犠打など${s.pa-s.ab}打席は打数から外しています。`
+    : "条件に合う打席がありません。絞り込みを緩めてください。");
+
+  $("#hmBase").innerHTML = baseline===null ? ""
+    : `色は絞り込み後の打率 <b>${fmtAvg(baseline)}</b> との差です。赤いほど得意、青いほど苦手。`;
+
+  renderHeatmap(list, baseline);
+  tableOf("#tSide","コース", groupRows(list, pa=>inOut(pa.col,bats), ["in","mid","out"], k=>SIDE_LBL[k]), baseline);
+  tableOf("#tHeight","高さ", groupRows(list, pa=>heightBand(pa.row), ["high","mid","low"], k=>H_LBL[k]), baseline);
+  tableOf("#tBreak","曲がり方", groupRows(list, pa=>breakRel(pa.brk,bats), REL_ORDER,
+    k=>`${relArrow(k,bats)}　${REL_LBL[k]}`), baseline);
+
+  const prows = [];
+  const byField = (field, map, prefix) => Object.entries(map).forEach(([k,v])=>{
+    const sub = list.filter(pa=>{ const pi = DB.pitchers.find(x=>x.id===pa.pitcherId); return pi && pi[field]===k; });
+    if (sub.length) prows.push({label:(prefix||"")+v, s:avgOf(sub)});
+  });
+  byField("throws", THROWS); byField("arm", ARMS); byField("velo", VELOS, "球速 ");
+  tableOf("#tPitcher","投手タイプ", prows, baseline);
+
+  tableOf("#tQuality","打球", groupRows(list, pa=>pa.result, RESULTS.map(r=>r.k), k=>RMAP[k].label), baseline);
+}
+
+/* ============================================================
+   書き出し
+   ============================================================ */
+function csvText(){
+  const head = ["日付","相手校","選手","打席左右","投げ腕","投げ方","球速","コース番号","高さ",
+    "イン/アウト","判定","曲がり方","結果","アウトセーフ","補足","打数","安打"];
+  const rows = DB.pas.slice().sort((a,b)=>a.ts-b.ts).map(pa=>{
+    const g  = DB.games.find(x=>x.id===pa.gameId) || {};
+    const pi = DB.pitchers.find(x=>x.id===pa.pitcherId) || {};
+    const pl = DB.players.find(x=>x.id===pa.playerId) || {};
+    const bats = pa.batsAt || pl.bats || "R";
+    const z = zone9(pa.row,pa.col);
+    return [g.date||"", g.opponent||"", pl.name||"", BATS[bats]||"",
+      THROWS[pi.throws]||"", ARMS[pi.arm]||"", VELOS[pi.velo]||"",
+      z===null?"ボールゾーン":z, H_LBL[heightBand(pa.row)], SIDE_LBL[inOut(pa.col,bats)],
+      pa.judge==="ball"?"ボール":"ストライク", REL_LBL[breakRel(pa.brk,bats)],
+      (RMAP[pa.result]||{}).label||"", pa.outSafe==="safe"?"セーフ":(pa.outSafe==="out"?"アウト":""),
+      pa.notes.map(k=>NMAP[k]).join(" "), isAtBat(pa)?1:0, isHit(pa)?1:0];
+  });
+  return [head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+}
+const stamp = () => new Date().toISOString().slice(0,10);
+
+async function saveFile(filename, data, mime){
+  try{
+    const blob = new Blob([data], {type: mime || "application/octet-stream"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    note("ioNote","書き出しました。端末の「ダウンロード」に保存されています。");
+  }catch(e){ note("ioNote","書き出せませんでした。「CSVをコピー」をお使いください。"); }
+}
+$("#btnExportCsv").addEventListener("click", ()=> saveFile(`batting_${stamp()}.csv`, "﻿"+csvText(), "text/csv;charset=utf-8"));
+$("#btnExport").addEventListener("click", ()=> saveFile(`batting_${stamp()}.json`,
+  JSON.stringify({version:1, players:DB.players, games:DB.games, pitchers:DB.pitchers, pas:DB.pas}, null, 2),
+  "application/json"));
+$("#btnCopyCsv").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText(csvText()); note("ioNote","CSVをコピーしました。表計算ソフトに貼り付けられます。"); }
+  catch(e){ note("ioNote","コピーできませんでした。"); }
+});
+
+$("#fileImport").addEventListener("change", e=>{
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = async () => {
+    try{
+      const o = JSON.parse(rd.result);
+      if (!o || !Array.isArray(o.players)) throw new Error("形式が違います");
+      if (!await ask("読み込んだデータを今のデータに追加します。よろしいですか？")) return;
+      let n = 0;
+      for (const c of COLLS){
+        for (const x of (o[c]||[])){
+          if (!x || !x.id || CACHE[c][x.id]) continue;
+          if (c==="pas") x.notes = Array.isArray(x.notes) ? x.notes : [];
+          await put(c, x); CACHE[c][x.id] = x; n++;
+        }
+      }
+      rebuild(); renderPlayers(); renderGames(); renderAll(); renderPlayerList();
+      note("ioNote", `${n}件を読み込みました。`);
+    }catch(err){ note("ioNote","読み込めませんでした："+err.message); }
+    e.target.value = "";
+  };
+  rd.readAsText(f);
+});
+
+$("#btnWipe").addEventListener("click", async ()=>{
+  if (!await ask("保存した全データを消します。戻せません。よろしいですか？")) return;
+  try{
+    for (const c of COLLS){
+      for (const id of Object.keys(CACHE[c])){ await drop(c,id); delete CACHE[c][id]; }
+    }
+    rebuild(); ST.playerId=ST.gameId=ST.pitcherId=null; F.player="";
+    renderPlayers(); renderGames(); renderAll(); renderPlayerList();
+    note("ioNote","消去しました。");
+  }catch(e){ writeFailed(e); }
+});
+
+/* ---- サンプル ---- */
+$("#btnSample").addEventListener("click", async ()=>{
+  const pl = {id:uid(), name:"サンプル 太郎", bats:"R"};
+  const specs = [
+    {opp:"県立一高",date:"2026-04-12",ps:[{throws:"R",arm:"over",velo:"fast"},{throws:"L",arm:"three",velo:"normal"}]},
+    {opp:"西工業",  date:"2026-04-20",ps:[{throws:"L",arm:"side",velo:"slow"}]},
+    {opp:"東学園",  date:"2026-05-03",ps:[{throws:"R",arm:"three",velo:"normal"},{throws:"R",arm:"under",velo:"slow"}]}
+  ];
+  const brks = ["straight","E","SE","S","W","SW","N","NE","NW"];
+  const rs   = ["fly","liner","hardGrounder","weakGrounder","swingingK","calledK","walk"];
+  let seed = 0x9e3779b9;
+  const rnd = n => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return (((t ^ (t >>> 14)) >>> 0) / 4294967296 * n) | 0;
+  };
+  const batch = [["players",pl]];
+
+  specs.forEach(sp=>{
+    const g = {id:uid(), date:sp.date, opponent:sp.opp};
+    batch.push(["games",g]);
+    const pids = sp.ps.map((x,i)=>{
+      const p = Object.assign({id:uid(), gameId:g.id, label:"", ts: new Date(sp.date).getTime()+i}, x);
+      batch.push(["pitchers",p]); return p.id;
+    });
+    for (let i=0;i<9;i++){
+      const row = 1 + rnd(3);
+      const col = (rnd(10) < 7) ? 1 + rnd(3) : rnd(5);
+      const res = rs[rnd(rs.length)];
+      const batted = RMAP[res].batted;
+      const side = inOut(col,"R");
+      const bias = side==="in" ? 22 : (side==="out" ? 55 : 38);
+      const safe = batted && (rnd(100) < bias);
+      batch.push(["pas",{
+        id:uid(), playerId:pl.id, gameId:g.id, pitcherId:pids[rnd(pids.length)],
+        ts:new Date(sp.date).getTime()+i*600000,
+        row, col, judge: inStrikeZone(row,col)?"strike":"ball",
+        brk:brks[rnd(brks.length)], result:res,
+        outSafe: batted ? (safe?"safe":"out") : (res==="walk"?null:"out"),
+        notes:(!batted||safe) ? [] : (rnd(10)<2 ? ["advance"] : (rnd(12)<2 ? ["sacBunt"] : [])),
+        batsAt:"R"
+      }]);
+    }
+  });
+
+  try{
+    for (const [c,obj] of batch){ await put(c,obj); CACHE[c][obj.id] = obj; }
+    rebuild();
+    ST.playerId = pl.id; F.player = pl.id; ST.gameId = null; ST.pitcherId = null;
+    renderPlayers(); renderGames(); renderAll(); renderPlayerList();
+    note("ioNote","サンプルを追加しました。分析タブで見てみてください。");
+  }catch(e){ writeFailed(e); }
+});
+
+/* ============================================================
+   ログインとアカウント
+   ============================================================ */
+function loginErr(msg){
+  const e = $("#loginErr");
+  if (msg){ e.textContent = msg; e.classList.add("on"); } else { e.classList.remove("on"); }
+}
+function showLogin(msg){
+  ME = null; canWrite = null; canAdmin = false; storeReady = false;
+  setToken(null);
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  document.body.classList.remove("adm");
+  $("#menu").classList.remove("on");
+  $("#login").classList.add("on");
+  $("#liPw").value = "";
+  loginErr(msg || "");
+  banner("");
+  setTimeout(()=>{ ($("#liId").value ? $("#liPw") : $("#liId")).focus(); }, 80);
+}
+function afterLogin(u){
+  ME = u;
+  canAdmin = (u.role === "admin");
+  canWrite = (u.role !== "viewer");
+  $("#login").classList.remove("on");
+  loginErr("");
+  $("#liPw").value = "";
+  applyRole();
+  lastSync = 0;
+  COLLS.forEach(c => CACHE[c] = {});
+  banner("データを読み込んでいます…");
+  syncNow().then(()=>{
+    pickMyPlayer();
+    if (canAdmin) loadUsers();
+  });
+  startPolling();
+}
+// ログイン中の人の打者記録があれば、最初からそれを選んでおく
+function pickMyPlayer(){
+  if (!ME) return;
+  const mine = DB.players.find(p => p.userId != null && String(p.userId) === String(ME.id));
+  if (!mine) return;
+  ST.playerId = mine.id; F.player = mine.id;
+  renderPlayers(); renderAll();
+}
+
+async function doLogin(){
+  const id = $("#liId").value.trim(), pw = $("#liPw").value;
+  if (!id || !pw){ loginErr("IDとパスワードを入力してください。"); return; }
+  $("#liGo").disabled = true;
+  try{ const d = await api("login", {login:id, pass:pw}); setToken(d.token); afterLogin(d.user); }
+  catch(e){ loginErr(e.message); $("#liPw").select(); }
+  finally{ $("#liGo").disabled = false; }
+}
+$("#liGo").addEventListener("click", doLogin);
+["#liId","#liPw"].forEach(sel => $(sel).addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); }));
+
+async function boot(){
+  try{
+    const d = await api("me");
+    if (d.needSetup){ showSetup(); return; }
+    if (d.user) afterLogin(d.user); else showLogin("");
+  }catch(e){
+    if (e.unconfigured){
+      showLogin("");
+      loginErr("接続先がまだ設定されていません。config.js を開いて、Cloudflare のアドレスを貼り付けてください。");
+      $("#liGo").disabled = true;
+      return;
+    }
+    showLogin("サーバーにつながりません。通信状況を確認してから、画面を読み込み直してください。");
+  }
+}
+
+/* ---- 初回だけ：最初の監督・コーチを作る ---- */
+function showSetup(){
+  $("#login").classList.add("on");
+  $("#loginBody").style.display = "none";
+  $("#setupBody").style.display = "block";
+  loginErr("");
+  setTimeout(()=>$("#suName").focus(), 80);
+}
+$("#suGo").addEventListener("click", async ()=>{
+  const name = $("#suName").value.trim();
+  const id   = $("#suId").value.trim();
+  const pw   = $("#suPw").value;
+  const pw2  = $("#suPw2").value;
+  if (!name){ note("suNote","お名前を入力してください。"); return; }
+  if (!/^[A-Za-z0-9_.-]{3,32}$/.test(id)){ note("suNote","IDは半角英数字3〜32文字で入力してください。"); return; }
+  if (pw.length < 8){ note("suNote","パスワードは8文字以上にしてください。"); return; }
+  if (pw !== pw2){ note("suNote","パスワードが一致しません。"); return; }
+  $("#suGo").disabled = true;
+  try{
+    await api("setup", {name, login:id, pass:pw});
+    const d = await api("login", {login:id, pass:pw});
+    setToken(d.token);
+    $("#setupBody").style.display = "none";
+    $("#loginBody").style.display = "block";
+    afterLogin(d.user);
+  }catch(e){ note("suNote", e.message); }
+  finally{ $("#suGo").disabled = false; }
+});
+
+/* ---- メニュー ---- */
+$("#menuBtn").addEventListener("click", ()=>{
+  $("#whoami").textContent = ME ? `${ME.name}（${ROLE_LBL[ME.role]}）` : "—";
+  $("#pwForm").style.display = "none";
+  note("pwNote","");
+  $("#menu").classList.add("on");
+});
+$("#mClose").addEventListener("click", ()=> $("#menu").classList.remove("on"));
+$("#menu").addEventListener("click", e=>{ if (e.target.id === "menu") $("#menu").classList.remove("on"); });
+$("#mTheme").addEventListener("click", toggleTheme);
+$("#mPass").addEventListener("click", ()=>{
+  const f = $("#pwForm");
+  f.style.display = f.style.display === "none" ? "block" : "none";
+  if (f.style.display === "block"){ $("#pwCur").value = ""; $("#pwNew").value = ""; $("#pwCur").focus(); }
+});
+$("#pwGo").addEventListener("click", async ()=>{
+  const cur = $("#pwCur").value, nw = $("#pwNew").value;
+  if (nw.length < 8){ note("pwNote","新しいパスワードは8文字以上にしてください。"); return; }
+  try{
+    await api("chpass", {cur, new:nw});
+    note("pwNote","変更しました。");
+    $("#pwCur").value = ""; $("#pwNew").value = "";
+  }catch(e){ note("pwNote", e.message); }
+});
+$("#mLogout").addEventListener("click", async ()=>{
+  $("#menu").classList.remove("on");
+  if (!await ask("ログアウトします。よろしいですか？")) return;
+  try{ await api("logout", {}); }catch(e){}
+  showLogin("");
+});
+
+/* ---- アカウント管理（監督・コーチのみ） ---- */
+let USERS = [];
+async function loadUsers(){
+  if (!canAdmin) return;
+  try{ const d = await api("users"); USERS = d.users || []; renderUsers(); }
+  catch(e){ /* 権限がなければ何もしない */ }
+}
+function renderUsers(){
+  const host = $("#userList"); if(!host) return;
+  if (!USERS.length){ host.innerHTML = '<div class="empty-note">まだありません</div>'; return; }
+  host.innerHTML = USERS.map(u=>{
+    const me = ME && String(u.id) === String(ME.id);
+    return `<div class="urow"><div class="ub">
+      <div class="un">${esc(u.name)}${me ? '<span class="dim">（自分）</span>' : ''}</div>
+      <div class="ui">ID: ${esc(u.login)}</div></div>
+      <span class="ur ${u.role==="admin"?"adm":""}">${ROLE_LBL[u.role]||u.role}</span>
+      ${me ? "" : `<button class="del" data-u="${u.id}" type="button" aria-label="削除">✕</button>`}
+      </div>`;
+  }).join("");
+  host.querySelectorAll("[data-u]").forEach(b=>{
+    b.addEventListener("click", async ()=>{
+      const u = USERS.find(x=>String(x.id)===b.dataset.u);
+      if (!await ask(`${u.name} さんのアカウントを削除します。\n記録したデータは残ります。よろしいですか？`)) return;
+      try{ await api("userDel", {id:Number(b.dataset.u)}); await loadUsers(); note("auNote","削除しました。"); }
+      catch(e){ await tell(e.message); }
+    });
+  });
+}
+chipGroup("#auRole", v=>{
+  const isPlayer = (v === "player");
+  $("#auBatsRow").style.display   = isPlayer ? "block" : "none";
+  $("#auCoachBats").style.display = isPlayer ? "none"  : "block";
+  if (isPlayer) $("#auAlsoPlayer").setAttribute("aria-pressed","false");
+});
+chipGroup("#auBats", ()=>{});
+// 監督・コーチや閲覧のみでも、本人の打撃データを取りたい場合
+$("#auAlsoPlayer").addEventListener("click", ()=>{
+  const b = $("#auAlsoPlayer");
+  const on = b.getAttribute("aria-pressed") === "true";
+  b.setAttribute("aria-pressed", String(!on));
+  $("#auBatsRow").style.display = !on ? "block" : "none";
+});
+$("#btnAddUser").addEventListener("click", ()=>{
+  $("#addUserForm").style.display = "block";
+  ["#auName","#auId","#auPw"].forEach(s=>$(s).value="");
+  chipSet("#auRole","player"); chipSet("#auBats","R");
+  $("#auAlsoPlayer").setAttribute("aria-pressed","false");
+  $("#auBatsRow").style.display = "block";
+  $("#auCoachBats").style.display = "none";
+  note("auNote",""); $("#auName").focus();
+});
+$("#btnCancelUser").addEventListener("click", ()=>{ $("#addUserForm").style.display="none"; });
+$("#btnSaveUser").addEventListener("click", async ()=>{
+  const role = chipValue("#auRole") || "player";
+  const also = $("#auAlsoPlayer").getAttribute("aria-pressed") === "true";
+  const payload = {
+    name:  $("#auName").value.trim(),
+    login: $("#auId").value.trim(),
+    pass:  $("#auPw").value,
+    role,
+    asPlayer: (role === "player") || also,
+    bats: chipValue("#auBats") || "R"
+  };
+  $("#btnSaveUser").disabled = true;
+  try{
+    const d = await api("userAdd", payload);
+    $("#addUserForm").style.display = "none";
+    await loadUsers();
+    await syncNow(true);                       // 登録された打者をすぐ反映する
+    if (d.playerId){ ST.playerId = d.playerId; renderPlayers(); renderAll(); }
+    note("ioNote", `${payload.name} さんを登録しました。`
+      + (d.playerId ? "打者一覧にも追加されています。" : "")
+      + "IDとパスワードを本人に伝えてください。");
+  }catch(e){ note("auNote", e.message); }
+  finally{ $("#btnSaveUser").disabled = false; }
+});
+
+/* ---- ホーム画面インストール ---- */
+if ("serviceWorker" in navigator &&
+    (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")){
+  window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+
+/* ============================================================
+   起動
+   ============================================================ */
+function renderAll(){
+  renderGames(); renderPitchers(); renderGamePAs(); updateZoneLabels(); updatePANote();
+  if ($("#p-stats").classList.contains("on")) renderStats();
+}
+buildZoneGrid(); buildBreakGrid(); buildResults();
+rebuild(); renderPlayers(); renderGames(); renderPitchers(); renderAll();
+boot();
+</script>
+</body>
+</html>
