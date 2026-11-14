@@ -4,5 +4,5 @@
 //  （手順書の「5. アプリと繋ぐ」で出てくるアドレスです）
 // ===========================================================
 window.APP_CONFIG = {
-  API: "https://ここにCloudflareのアドレスを貼る.workers.dev"
+  API: "https://batting-api.bms-100mile.workers.dev"
 };
