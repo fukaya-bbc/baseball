@@ -1,5 +1,5 @@
 // 打撃データ分析 ― オフライン対応とホーム画面インストール用
-const VERSION = 'bb-v1';
+const VERSION = 'bb-v2';
 const SHELL = ['./index.html','./manifest.json','./logo.png','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {

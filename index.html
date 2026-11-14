@@ -347,7 +347,7 @@ body.adm nav.tabs button.ao{display:flex}
     </div>
 
     <div style="margin-top:14px">
-      <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート）</span></label>
+      <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート／↑＝チェンジアップなど遅い球）</span></label>
       <div class="grid3" id="breakGrid"></div>
       <div class="bhint" id="breakHint"></div>
     </div>
@@ -401,9 +401,21 @@ body.adm nav.tabs button.ao{display:flex}
     <h2>成績</h2>
     <div class="tiles">
       <div class="tile hero"><div class="k">打率</div><div class="v" id="sAvg">—</div></div>
+      <div class="tile"><div class="k">出塁率</div><div class="v" id="sOBP">—</div></div>
+      <div class="tile"><div class="k">長打率</div><div class="v" id="sSLG">—</div></div>
+      <div class="tile hero"><div class="k">OPS</div><div class="v" id="sOPS">—</div></div>
+    </div>
+    <div class="tiles" style="margin-top:8px">
       <div class="tile"><div class="k">打席</div><div class="v" id="sPA">—</div></div>
       <div class="tile"><div class="k">打数</div><div class="v" id="sAB">—</div></div>
       <div class="tile"><div class="k">安打</div><div class="v" id="sH">—</div></div>
+      <div class="tile"><div class="k">塁打</div><div class="v" id="sTB">—</div></div>
+    </div>
+    <div class="tiles" style="margin-top:8px">
+      <div class="tile"><div class="k">四球</div><div class="v" id="sBB">—</div></div>
+      <div class="tile"><div class="k">死球</div><div class="v" id="sHBP">—</div></div>
+      <div class="tile"><div class="k">犠打・犠飛</div><div class="v" id="sSAC">—</div></div>
+      <div class="tile"><div class="k">三振</div><div class="v" id="sSO">—</div></div>
     </div>
     <div class="note" id="sNote"></div>
   </div>
@@ -422,8 +434,13 @@ body.adm nav.tabs button.ao{display:flex}
 
   <div class="card"><h2>コース左右別</h2><div class="scrollx"><table id="tSide"></table></div></div>
   <div class="card"><h2>高さ別</h2><div class="scrollx"><table id="tHeight"></table></div></div>
-  <div class="card"><h2>球種別<span class="hint">打者から見た曲がり方</span></h2>
-    <div class="scrollx"><table id="tBreak"></table></div></div>
+  <div class="card"><h2>球種別<span class="hint">投手の利き腕から判定</span></h2>
+    <div class="scrollx"><table id="tBreak"></table></div>
+    <div class="note">同じ「横に曲がる球」でも、右投手なら一塁側へ、左投手なら三塁側へ曲がります。その違いを踏まえて球種を判定しています。</div></div>
+
+  <div class="card"><h2>打者から見た動き<span class="hint">逃げる／食い込む</span></h2>
+    <div class="scrollx"><table id="tMove"></table></div>
+    <div class="note">球種にかかわらず「体から逃げる球に弱い」といった傾向を見る表です。</div></div>
   <div class="card"><h2>投手タイプ別</h2><div class="scrollx"><table id="tPitcher"></table></div></div>
   <div class="card"><h2>打球の質</h2><div class="scrollx"><table id="tQuality"></table></div>
     <div class="note">打率だけでなく打球の内容を見ます。強い打球が多いのに打率が低いコースは、運に恵まれていないだけかもしれません。</div></div>
@@ -608,8 +625,10 @@ const RESULTS = [
 const RMAP = Object.fromEntries(RESULTS.map(r=>[r.k,r]));
 
 const NOTES = [
+  {k:"single",label:"シングルヒット"}, {k:"double",label:"ツーベース"},
+  {k:"triple",label:"スリーベース"},   {k:"homerun",label:"ホームラン"},
   {k:"cleanHit",label:"クリーンヒット"}, {k:"infieldHit",label:"強襲ヒット"},
-  {k:"homerun",label:"ホームラン"}, {k:"timely",label:"タイムリー"},
+  {k:"timely",label:"タイムリー"},
   {k:"advance",label:"進塁打"}, {k:"tagUpRBI",label:"タッチアップで得点"},
   {k:"sacBunt",label:"送りバント"}, {k:"safetyBunt",label:"セーフティバント"},
   {k:"sacFly",label:"犠飛"}, {k:"onError",label:"エラーで出塁"},
@@ -617,7 +636,15 @@ const NOTES = [
 ];
 const NMAP = Object.fromEntries(NOTES.map(n=>[n.k,n.label]));
 // この補足が付いていれば安打として数える
-const HIT_NOTES = ["cleanHit","infieldHit","homerun","timely"];
+const HIT_NOTES = ["single","double","triple","homerun","cleanHit","infieldHit","timely"];
+// 塁打数（長打率の計算に使う）
+function totalBases(pa){
+  if (!isHit(pa)) return 0;
+  if (pa.notes.includes("homerun")) return 4;
+  if (pa.notes.includes("triple"))  return 3;
+  if (pa.notes.includes("double"))  return 2;
+  return 1;
+}
 
 /* ============================================================
    派生ロジック
@@ -648,16 +675,40 @@ function breakRel(k, bats){
   return down ? "insideDrop" : "insideRise";
 }
 const REL_LBL = {
-  none:"ストレート（曲がらない）", rise:"ストレート（伸びる）", drop:"落ちる",
-  away:"横に逃げる", awayDrop:"逃げて落ちる", awayRise:"逃げて伸びる",
-  inside:"内に食い込む", insideDrop:"食い込んで落ちる", insideRise:"食い込んで伸びる"
+  none:"ストレート（曲がらない）", rise:"遅い球（奥行き）", drop:"縦に落ちる",
+  away:"横に逃げる", awayDrop:"逃げて落ちる", awayRise:"逃げて落ちない",
+  inside:"内に食い込む", insideDrop:"食い込んで落ちる", insideRise:"食い込んで落ちない"
 };
 const REL_ORDER = ["none","rise","away","awayDrop","awayRise","inside","insideDrop","insideRise","drop"];
-const REL_HINT = {
-  none:"ストレート", rise:"ストレート・伸び系", drop:"カーブ・フォーク系",
-  away:"スライダー・カット系", awayDrop:"スライダー・カーブ系", awayRise:"カット系",
-  inside:"シュート・ツーシーム系", insideDrop:"シンカー系", insideRise:"シュート系"
+// --- 球種の判定 ---------------------------------------------
+// 球種は「投手の利き腕」と「曲がった向き」で決まる。打者の左右は関係ない。
+// 画面は打者目線なので、図の右＝一塁側。
+// 右投手のグラブ側（スライダー）は一塁側へ、腕側（シュート）は三塁側へ曲がる。
+// 左投手はその逆になる。
+function pitchKind(brk, throws){
+  if (brk === "straight") return "straight";
+  if (brk === "N") return "change";               // 奥行きを使う遅い球
+  if (brk === "S") return "drop";                 // 縦に落ちる
+  const toRight = (brk === "E" || brk === "NE" || brk === "SE");
+  const glove   = (throws === "L") ? !toRight : toRight;   // グラブ側か腕側か
+  const down    = (brk === "SE" || brk === "SW");
+  const up      = (brk === "NE" || brk === "NW");
+  if (glove) return down ? "sliderDrop" : (up ? "cut" : "slider");
+  return        down ? "sinker"     : (up ? "twoseam" : "shoot");
+}
+const KIND_LBL = {
+  straight:  "ストレート",
+  change:    "チェンジアップ・スローボール系",
+  slider:    "スライダー系（横に滑る）",
+  sliderDrop:"スライダー・カーブ系（滑って落ちる）",
+  cut:       "カット系（落ちずに横へ）",
+  shoot:     "シュート・ツーシーム系（横に食い込む）",
+  sinker:    "シンカー系（食い込んで落ちる）",
+  twoseam:   "ツーシーム系（落ちずに横へ）",
+  drop:      "フォーク・カーブ系（縦に落ちる）"
 };
+const KIND_ORDER = ["straight","change","slider","sliderDrop","cut",
+                    "shoot","sinker","twoseam","drop"];
 // 曲がり方を、その打者から見た矢印に戻す
 const REL_ARROW_R = {none:"●", rise:"↑", drop:"↓", away:"→", inside:"←",
   awayDrop:"↘", awayRise:"↗", insideDrop:"↙", insideRise:"↖"};
@@ -688,9 +739,23 @@ function isHit(pa){
   return true;
 }
 function avgOf(list){
-  const ab = list.filter(isAtBat).length;
-  const h  = list.filter(isHit).length;
-  return {pa:list.length, ab, h, avg: ab ? h/ab : null};
+  const ab  = list.filter(isAtBat).length;
+  const h   = list.filter(isHit).length;
+  const bb  = list.filter(p => p.result === "walk").length;
+  const hbp = list.filter(p => p.result === "hbp").length;
+  const sac = list.filter(p => p.notes.includes("sacBunt")).length;
+  const sf  = list.filter(p => p.notes.includes("sacFly")).length;
+  const so  = list.filter(p => p.result === "swingingK" || p.result === "calledK").length;
+  const tb  = list.reduce((t, p) => t + totalBases(p), 0);
+  const obpDen = ab + bb + hbp + sf;          // 出塁率の分母
+  const obp = obpDen ? (h + bb + hbp) / obpDen : null;
+  const slg = ab ? tb / ab : null;
+  return {
+    pa:list.length, ab, h, bb, hbp, sac, sf, so, tb,
+    avg: ab ? h / ab : null,
+    obp, slg,
+    ops: (obp === null || slg === null) ? null : obp + slg
+  };
 }
 function fmtAvg(a){ return (a===null||a===undefined) ? "—" : a.toFixed(3).replace(/^0/,""); }
 
@@ -1126,7 +1191,10 @@ function buildBreakGrid(){
     ST.brk = b.dataset.k;
     const bats = curPlayer() ? curPlayer().bats : "R";
     const rel = breakRel(ST.brk, bats);
-    $("#breakHint").textContent = `${REL_LBL[rel]}　→　${REL_HINT[rel]}`;
+    const pi = DB.pitchers.find(x => x.id === ST.pitcherId);
+    $("#breakHint").textContent = pi
+      ? `${REL_LBL[rel]}　→　${KIND_LBL[pitchKind(ST.brk, pi.throws)]}`
+      : `${REL_LBL[rel]}（投手を選ぶと球種名が出ます）`;
     Array.from(g.children).forEach(c=>c.setAttribute("aria-label", REL_LBL[breakRel(c.dataset.k,bats)]));
     updatePANote();
   });
@@ -1286,8 +1354,8 @@ function fillFilters(){
   $("#fArm").innerHTML    = opt("","すべて",F.arm) + Object.entries(ARMS).map(([k,v])=>opt(k,v,F.arm)).join("");
   $("#fVelo").innerHTML   = opt("","すべて",F.velo) + Object.entries(VELOS).map(([k,v])=>opt(k,v,F.velo)).join("");
   $("#fBreak").innerHTML  = opt("","すべて",F.brk)
-    + Object.entries(AXIS_LBL).map(([k,v])=>opt("axis:"+k,`曲がり：${v}`,F.brk)).join("")
-    + REL_ORDER.map(k=>opt("rel:"+k, `${relArrow(k, F.player ? batsOf(F.player) : "R")} ${REL_LBL[k]}`, F.brk)).join("");
+    + KIND_ORDER.map(k=>opt("kind:"+k, KIND_LBL[k], F.brk)).join("")
+    + Object.entries(AXIS_LBL).map(([k,v])=>opt("axis:"+k,`曲がり：${v}`,F.brk)).join("");
   $("#fJudge").innerHTML  = opt("","すべて",F.judge)+opt("strike","ストライク",F.judge)+opt("ball","ボール球",F.judge);
   $("#fSide").innerHTML   = opt("","すべて",F.side) + Object.entries(SIDE_LBL).map(([k,v])=>opt(k,v,F.side)).join("");
 }
@@ -1314,9 +1382,10 @@ function filtered(){
     if (F.judge  && pa.judge !== F.judge)            return false;
     if (F.side   && inOut(pa.col,bats) !== F.side)   return false;
     if (F.brk){
-      const [kind,val] = F.brk.split(":");
-      if (kind==="axis" && breakAxis(pa.brk) !== val) return false;
-      if (kind==="rel"  && breakRel(pa.brk,bats) !== val) return false;
+      const [sel,val] = F.brk.split(":");
+      if (sel==="axis" && breakAxis(pa.brk) !== val) return false;
+      if (sel==="kind" && pitchKind(pa.brk, pi ? pi.throws : "R") !== val) return false;
+      if (sel==="rel"  && breakRel(pa.brk,bats) !== val) return false;
     }
     return true;
   });
@@ -1411,10 +1480,11 @@ function groupRows(list, keyFn, order, labelFn){
 function renderStats(){
   fillFilters(); updateZoneLabels();
   if (!DB.players.length || !F.player){
-    ["#sAvg","#sPA","#sAB","#sH"].forEach(s=>$(s).textContent="—");
+    ["#sAvg","#sOBP","#sSLG","#sOPS","#sPA","#sAB","#sH","#sTB",
+     "#sBB","#sHBP","#sSAC","#sSO"].forEach(s=>$(s).textContent="—");
     note("sNote", storeReady ? "選手を登録して打席を記録すると集計されます。" : "読み込み中です…");
     $("#heatmap").innerHTML=""; $("#hmLegend").innerHTML=""; $("#hmBase").textContent="";
-    ["#tSide","#tHeight","#tBreak","#tPitcher","#tQuality"].forEach(s=>$(s).innerHTML="");
+    ["#tSide","#tHeight","#tBreak","#tMove","#tPitcher","#tQuality"].forEach(s=>$(s).innerHTML="");
     return;
   }
   const bats = batsOf(F.player);
@@ -1423,12 +1493,22 @@ function renderStats(){
   const baseline = s.avg;
 
   $("#sAvg").textContent = fmtAvg(s.avg);
+  $("#sOBP").textContent = fmtAvg(s.obp);
+  $("#sSLG").textContent = fmtAvg(s.slg);
+  $("#sOPS").textContent = fmtAvg(s.ops);
   $("#sPA").textContent  = s.pa;
   $("#sAB").textContent  = s.ab;
   $("#sH").textContent   = s.h;
+  $("#sTB").textContent  = s.tb;
+  $("#sBB").textContent  = s.bb;
+  $("#sHBP").textContent = s.hbp;
+  $("#sSAC").textContent = s.sac + s.sf;
+  $("#sSO").textContent  = s.so;
 
   note("sNote", s.pa
-    ? `絞り込み後の${s.pa}打席のうち、四球・死球・犠打など${s.pa-s.ab}打席は打数から外しています。`
+    ? `${s.pa}打席のうち、四球・死球・犠打など${s.pa-s.ab}打席は打数から外しています。`
+      + `　出塁率＝(安打+四球+死球)÷(打数+四球+死球+犠飛)、長打率＝塁打÷打数、OPS＝出塁率+長打率。`
+      + `　塁打はシングル1・ツーベース2・スリーベース3・ホームラン4で数えます（補足で指定がなければ1）。`
     : "条件に合う打席がありません。絞り込みを緩めてください。");
 
   $("#hmBase").innerHTML = baseline===null ? ""
@@ -1437,7 +1517,12 @@ function renderStats(){
   renderHeatmap(list, baseline);
   tableOf("#tSide","コース", groupRows(list, pa=>inOut(pa.col,bats), ["in","mid","out"], k=>SIDE_LBL[k]), baseline);
   tableOf("#tHeight","高さ", groupRows(list, pa=>heightBand(pa.row), ["high","mid","low"], k=>H_LBL[k]), baseline);
-  tableOf("#tBreak","曲がり方", groupRows(list, pa=>breakRel(pa.brk,bats), REL_ORDER,
+  tableOf("#tBreak","球種", groupRows(list, pa=>{
+    const pi = DB.pitchers.find(x=>x.id===pa.pitcherId);
+    return pitchKind(pa.brk, pi ? pi.throws : "R");
+  }, KIND_ORDER, k=>KIND_LBL[k]), baseline);
+
+  tableOf("#tMove","打者から見た動き", groupRows(list, pa=>breakRel(pa.brk,bats), REL_ORDER,
     k=>`${relArrow(k,bats)}　${REL_LBL[k]}`), baseline);
 
   const prows = [];
