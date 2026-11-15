@@ -1434,11 +1434,12 @@ function sideLabels(bats, lSel, rSel){
 }
 function updateZoneLabels(){
   const inBats = curPlayer() ? curPlayer().bats : "R";
+  const stBats = F.player ? batsOf(F.player) : inBats;
   sideLabels(inBats, "#zoneL", "#zoneR");
-  sideLabels(F.player ? batsOf(F.player) : inBats, "#hmL", "#hmR");
+  sideLabels(stBats, "#hmL", "#hmR");
   $("#zoneGrid").querySelectorAll(".cell").forEach(b=>
     b.setAttribute("aria-label", zoneAria(+b.dataset.r, +b.dataset.c)));
-  renderField(inBats);
+  renderField(inBats, stBats);
   $("#zoneLegend").innerHTML = curPlayer()
     ? `捕手の後ろから見た向きです。${BATS[inBats]}なので、ホームベースの${inOut(0,inBats)==="in"?"左":"右"}に立っています。`
     : "捕手の後ろから見た向きです。";
@@ -1447,13 +1448,17 @@ function updateZoneLabels(){
 // 打席に立ったときの景色を描く（捕手の後ろから投手方向を見た向き）
 // 右打者はホームベースの左に立つので、図の左側に描く。
 // 右打ちは写真のまま（打者がベースの左）。左打ちは左右反転してゾーンも反対側へ。
-function renderField(bats){
+function renderScene(sel, bats){
+  const sc = document.querySelector(sel); if (!sc) return;
   const lh = (bats !== "R");
-  const src = lh ? "field-l.jpg" : "field.jpg";
-  document.querySelectorAll(".scene").forEach(el=>el.classList.toggle("lh", lh));
-  document.querySelectorAll(".scene .field").forEach(el=>{
-    if (!el.getAttribute("src").endsWith(src)) el.setAttribute("src", src);
-  });
+  sc.classList.toggle("lh", lh);
+  const img = sc.querySelector(".field"), src = lh ? "field-l.jpg" : "field.jpg";
+  if (img && !String(img.getAttribute("src")||"").endsWith(src)) img.setAttribute("src", src);
+}
+// 入力タブは「いま記録している選手」、分析タブは「絞り込みで選んでいる選手」を見る
+function renderField(inBats, statBats){
+  renderScene("#p-input .scene", inBats);
+  renderScene("#p-stats .scene", statBats === undefined ? inBats : statBats);
 }
 
 /* ============================================================
