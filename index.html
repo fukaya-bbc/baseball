@@ -129,6 +129,17 @@ button.btn:disabled{opacity:.4;cursor:not-allowed}
   border-radius:8px;opacity:.5;z-index:1}
 .zonelegend{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
 
+.scene{position:relative;width:calc(100% + 28px);max-width:none;margin:0 -14px;
+  aspect-ratio:400/310;overflow:hidden;background:#36414b;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.scene .field{position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;object-position:center}
+.scene .grid5,.scene .hm{position:absolute;left:35%;top:9%;width:62%;height:80%;
+  max-width:none;margin:0;aspect-ratio:auto;padding:3px;
+  box-shadow:0 0 0 2px rgba(255,255,255,.85),0 10px 26px rgba(0,0,0,.5)}
+.scene.lh .grid5,.scene.lh .hm{left:3%}
+.tbl tr.me td{background:rgba(0,117,198,.10)}
+.tbl tr.me td.lab{font-weight:700}
 .plate{width:100%;max-width:400px;display:block;margin-top:2px}
 .plate .pl{fill:var(--surface-1);stroke:var(--axis);stroke-width:2.5;stroke-linejoin:round}
 .plate .bx{fill:var(--zone-fill);stroke:var(--axis);stroke-width:1.5;stroke-dasharray:5 4}
@@ -195,6 +206,18 @@ td .mk{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:
 @media(max-width:420px){.tiles{grid-template-columns:repeat(2,1fr)}}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ro .wo{display:none}
+body.mgr .mo{display:none}
+body.mgr .mlock{pointer-events:none;opacity:.5}
+body.mgr #cardPA{display:none}
+body.mgr.editing #cardPA{display:block}
+body.mgr #btnSavePA{display:none}
+body.mgr.editing #btnSavePA{display:inline-flex}
+#editBar{display:none;align-items:center;gap:10px;flex-wrap:wrap;
+  background:rgba(0,117,198,.10);border:1px solid rgba(0,117,198,.35);
+  border-radius:10px;padding:9px 11px;margin-bottom:12px;font-size:14px}
+body.editing #editBar{display:flex}
+body.editing #btnSavePA{background:#b8471f}
+.palist .bd{cursor:pointer}
 .ao{display:none}
 nav.tabs button.ao{display:none}
 body.adm .ao{display:block}
@@ -278,7 +301,7 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card">
     <h2>試合</h2>
     <div class="row"><div><label class="fld" for="selGame">対戦</label><select id="selGame"></select></div></div>
-    <div class="btnrow wo"><button class="btn sec" id="btnNewGame" type="button">試合を追加</button></div>
+    <div class="btnrow wo mo"><button class="btn sec" id="btnNewGame" type="button">試合を追加</button></div>
     <div id="newGameForm" style="display:none;margin-top:10px">
       <div class="row">
         <div><label class="fld" for="ngDate">日付</label><input type="date" id="ngDate"></div>
@@ -292,7 +315,7 @@ body.adm nav.tabs button.ao{display:flex}
     </div>
   </div>
 
-  <div class="card wo">
+  <div class="card wo mo">
     <h2>投手<span class="hint">交代したら追加</span></h2>
     <div class="cur" id="pitcherCur">—</div>
     <div class="row"><div><label class="fld" for="selPitcher">登板中</label><select id="selPitcher"></select></div></div>
@@ -325,20 +348,28 @@ body.adm nav.tabs button.ao{display:flex}
     </div>
   </div>
 
-  <div class="card wo">
-    <h2>打席を記録</h2>
+  <div class="card wo" id="cardPA">
+    <h2 id="paTitle">打席を記録</h2>
+    <div id="editBar">
+      <span id="editWho">記録を修正しています</span>
+      <button class="btn sec" id="btnCancelEdit" type="button" style="margin-left:auto">やめる</button>
+    </div>
     <div class="cur" id="paCtx">—</div>
 
+    <div class="mlock">
     <label class="fld">① 打った球のコース<span style="font-weight:400;color:var(--muted)">（25分割・青枠の内側がストライク）</span></label>
     <div class="zonewrap">
       <div class="zonehdr"><span id="zoneL">—</span><span>高め</span><span id="zoneR">—</span></div>
-      <div class="grid5" id="zoneGrid"></div>
+      <div class="scene">
+        <img class="field" id="fieldIn" src="field.jpg" alt="" aria-hidden="true">
+        <div class="grid5" id="zoneGrid"></div>
+      </div>
       <div class="zonebot">低め</div>
-      <svg class="plate" id="plate" viewBox="0 0 400 96" aria-hidden="true"></svg>
     </div>
     <div class="zonelegend" id="zoneLegend"></div>
+    </div>
 
-    <div style="margin-top:14px">
+    <div style="margin-top:14px" class="mlock">
       <label class="fld">② 判定</label>
       <div class="chips" id="selJudge">
         <button class="chip" type="button" data-v="strike" aria-pressed="false">ストライク</button>
@@ -346,7 +377,7 @@ body.adm nav.tabs button.ao{display:flex}
       </div>
     </div>
 
-    <div style="margin-top:14px">
+    <div style="margin-top:14px" class="mlock">
       <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート／↑＝チェンジアップなど遅い球）</span></label>
       <div class="grid3" id="breakGrid"></div>
       <div class="bhint" id="breakHint"></div>
@@ -386,6 +417,7 @@ body.adm nav.tabs button.ao{display:flex}
     <h2>絞り込み</h2>
     <div class="filters">
       <div><label class="fld" for="fPlayer">打者</label><select id="fPlayer"></select></div>
+      <div><label class="fld" for="fRecent">期間</label><select id="fRecent"></select></div>
       <div><label class="fld" for="fOpp">相手校</label><select id="fOpp"></select></div>
       <div><label class="fld" for="fThrows">投げ腕</label><select id="fThrows"></select></div>
       <div><label class="fld" for="fArm">投げ方</label><select id="fArm"></select></div>
@@ -421,11 +453,23 @@ body.adm nav.tabs button.ao{display:flex}
   </div>
 
   <div class="card">
+    <h2>チーム内ランキング<span class="hint">上位10名</span></h2>
+    <div class="filters" style="grid-template-columns:1fr">
+      <div><label class="fld" for="fRank">並び順</label><select id="fRank"></select></div>
+    </div>
+    <table class="tbl" id="tRank"></table>
+    <div class="note" id="rkNote"></div>
+  </div>
+
+  <div class="card">
     <h2>コース別打率<span class="hint">9分割＋ボールゾーン</span></h2>
     <div id="hmBase" class="cur"></div>
     <div class="zonewrap">
       <div class="zonehdr"><span id="hmL">—</span><span>高め</span><span id="hmR">—</span></div>
-      <div class="hm" id="heatmap"></div>
+      <div class="scene">
+        <img class="field" id="fieldSt" src="field.jpg" alt="" aria-hidden="true">
+        <div class="hm" id="heatmap"></div>
+      </div>
       <div class="zonebot">低め</div>
     </div>
     <div class="hmlegend" id="hmLegend"></div>
@@ -480,6 +524,7 @@ body.adm nav.tabs button.ao{display:flex}
       <label class="fld" style="margin-top:13px">② 権限</label>
       <div class="chips" id="auRole">
         <button class="chip" type="button" data-v="player" aria-pressed="true">選手</button>
+        <button class="chip" type="button" data-v="manager" aria-pressed="false">マネージャー</button>
         <button class="chip" type="button" data-v="admin" aria-pressed="false">監督・コーチ</button>
         <button class="chip" type="button" data-v="viewer" aria-pressed="false">閲覧のみ</button>
       </div>
@@ -769,6 +814,7 @@ let DB = {players:[], games:[], pitchers:[], pas:[]};
 let ME = null;               // ログイン中の利用者
 let canWrite = null;         // 記録を書けるか
 let canAdmin = false;        // 監督・コーチか
+let isManager = false;       // マネージャーか（結果だけ直せる）
 let storeReady = false;
 let lastSync = 0;
 let pollTimer = null;
@@ -879,6 +925,7 @@ function redrawAll(){
 function applyRole(){
   document.body.classList.toggle("ro", canWrite === false);
   document.body.classList.toggle("adm", canAdmin === true);
+  document.body.classList.toggle("mgr", isManager === true);
   if (!canAdmin && $("#p-data").classList.contains("on")){
     $$("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.p==="p-input")));
     $$("section.panel").forEach(s=>s.classList.toggle("on", s.id==="p-input"));
@@ -890,18 +937,22 @@ function applyRole(){
   sn.innerHTML = canAdmin
     ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
       + "・<b>監督・コーチ</b>：すべて操作できます<br>"
+      + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。打席の<b>結果だけ</b>直せます（コースや球種は直せません）。新しい記録や削除はできません<br>"
       + "・<b>選手</b>：打席の記録と分析の閲覧。選手名簿やこのタブは触れません<br>"
       + "・<b>閲覧のみ</b>：分析を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
-const ROLE_LBL = {admin:"監督・コーチ", player:"選手", viewer:"閲覧のみ"};
+const ROLE_LBL = {admin:"監督・コーチ", manager:"マネージャー", player:"選手", viewer:"閲覧のみ"};
 
 /* ============================================================
    画面の状態
    ============================================================ */
-const ST = {playerId:null, gameId:null, pitcherId:null,
+const ST = {playerId:null, gameId:null, pitcherId:null, editId:null,
   row:null, col:null, judge:null, brk:null, result:null, outSafe:null, notes:new Set()};
-const F = {player:"", opp:"", throws:"", arm:"", velo:"", brk:"", judge:"", side:""};
+const F = {player:"", recent:"", opp:"", throws:"", arm:"", velo:"", brk:"", judge:"", side:""};
+const RECENTS = {"1":"直近1試合","3":"直近3試合","5":"直近5試合"};
+const RANKS   = {ops:"OPSの高い順", obp:"出塁率の高い順"};
+let rankKey = "ops";
 
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -1002,7 +1053,7 @@ function renderPlayers(){
   $("#curPlayerLbl").textContent = p ? `${p.name}・${BATS[p.bats]}` : "";
   updateZoneLabels();
 }
-$("#selPlayer").addEventListener("change", e=>{ ST.playerId = e.target.value||null; renderPlayers(); renderAll(); });
+$("#selPlayer").addEventListener("change", e=>{ setEditing(null); clearPA(); ST.playerId = e.target.value||null; renderPlayers(); renderAll(); });
 
 function renderPlayerList(){
   const host = $("#playerList"); if(!host) return;
@@ -1063,6 +1114,7 @@ function renderGames(){
   }
 }
 $("#selGame").addEventListener("change", e=>{
+  setEditing(null); clearPA();
   ST.gameId = e.target.value||null; ST.pitcherId = null; renderGames(); renderAll();
 });
 
@@ -1152,27 +1204,22 @@ function updateZoneLabels(){
   sideLabels(F.player ? batsOf(F.player) : inBats, "#hmL", "#hmR");
   $("#zoneGrid").querySelectorAll(".cell").forEach(b=>
     b.setAttribute("aria-label", zoneAria(+b.dataset.r, +b.dataset.c)));
-  renderPlate(inBats);
+  renderField(inBats);
   $("#zoneLegend").innerHTML = curPlayer()
     ? `捕手の後ろから見た向きです。${BATS[inBats]}なので、ホームベースの${inOut(0,inBats)==="in"?"左":"右"}に立っています。`
     : "捕手の後ろから見た向きです。";
 }
 
-// ホームベースと打者の立ち位置（右打者はベースの左）
-function renderPlate(bats){
-  const svg = $("#plate"); if(!svg) return;
-  const onLeft = (bats === "R");
-  const cx   = onLeft ? 128 : 272;
-  const boxX = onLeft ?  98 : 242;
-  const dir  = onLeft ? 1 : -1;                 // ベースのある向き
-  svg.innerHTML =
-    `<rect class="bx" x="${boxX}" y="6" width="60" height="68" rx="4"/>` +
-    `<polygon class="pl" points="180,22 220,22 220,44 200,60 180,44"/>` +
-    `<line class="batt" x1="${cx + dir*3}" y1="44" x2="${cx - dir*17}" y2="16"/>` +
-    `<circle class="fig" cx="${cx}" cy="30" r="9"/>` +
-    `<rect class="fig" x="${cx-8}" y="41" width="16" height="30" rx="8"/>` +
-    `<text class="lb" x="${cx}" y="90" text-anchor="middle">${BATS[bats]}</text>` +
-    `<text class="lbm" x="200" y="78" text-anchor="middle">ホームベース</text>`;
+// 打席に立ったときの景色を描く（捕手の後ろから投手方向を見た向き）
+// 右打者はホームベースの左に立つので、図の左側に描く。
+// 右打ちは写真のまま（打者がベースの左）。左打ちは左右反転してゾーンも反対側へ。
+function renderField(bats){
+  const lh = (bats !== "R");
+  const src = lh ? "field-l.jpg" : "field.jpg";
+  document.querySelectorAll(".scene").forEach(el=>el.classList.toggle("lh", lh));
+  document.querySelectorAll(".scene .field").forEach(el=>{
+    if (!el.getAttribute("src").endsWith(src)) el.setAttribute("src", src);
+  });
 }
 
 /* ============================================================
@@ -1275,23 +1322,69 @@ async function writeFailed(e){
 
 $("#btnSavePA").addEventListener("click", async ()=>{
   const pl = curPlayer(); if(!pl) return;
-  const pa = {
-    id:uid(), playerId:ST.playerId, gameId:ST.gameId, pitcherId:ST.pitcherId, ts:Date.now(),
-    row:ST.row, col:ST.col,
-    judge: ST.judge || (inStrikeZone(ST.row,ST.col)?"strike":"ball"),
-    brk:ST.brk, result:ST.result,
-    outSafe: RMAP[ST.result].batted ? ST.outSafe : ((ST.result==="walk"||ST.result==="hbp") ? null : "out"),
-    notes:[...ST.notes], batsAt: pl.bats
-  };
+  const old = ST.editId ? DB.pas.find(x=>x.id===ST.editId) : null;
+  if (ST.editId && !old){ setEditing(null); note("paNote","元の記録が見つかりませんでした。"); return; }
+
+  const outSafe = RMAP[ST.result].batted ? ST.outSafe
+    : ((ST.result==="walk"||ST.result==="hbp") ? null : "out");
+  const pa = old
+    // 修正：コースや球種はマネージャーには触らせない（サーバー側でも弾く）
+    ? { ...old, result:ST.result, outSafe, notes:[...ST.notes],
+        ...(isManager ? {} : { row:ST.row, col:ST.col, brk:ST.brk,
+            judge: ST.judge || (inStrikeZone(ST.row,ST.col)?"strike":"ball") }) }
+    : { id:uid(), playerId:ST.playerId, gameId:ST.gameId, pitcherId:ST.pitcherId, ts:Date.now(),
+        row:ST.row, col:ST.col,
+        judge: ST.judge || (inStrikeZone(ST.row,ST.col)?"strike":"ball"),
+        brk:ST.brk, result:ST.result, outSafe, notes:[...ST.notes], batsAt: pl.bats };
   try{
     await put("pas", pa);
     CACHE.pas[pa.id] = pa; rebuild();
-    clearPA(); renderGamePAs();
-    note("paNote","記録しました。");
+    const wasEdit = !!old;
+    setEditing(null); clearPA(); renderGamePAs();
+    note("paNote", wasEdit ? "修正しました。" : "記録しました。");
+    if (wasEdit && document.getElementById("p-stats").classList.contains("on")) renderStats();
   }catch(e){ writeFailed(e); }
 });
 
-$("#btnClearPA").addEventListener("click", clearPA);
+/* ---- 記録した打席を直す ---- */
+function setEditing(id){
+  ST.editId = id || null;
+  document.body.classList.toggle("editing", !!ST.editId);
+  $("#paTitle").textContent  = ST.editId ? "打席を修正" : "打席を記録";
+  $("#btnSavePA").textContent = ST.editId ? "修正を保存" : "この打席を記録";
+  $("#editWho").textContent = !ST.editId ? ""
+    : (isManager ? "結果だけ直せます（コース・球種は直せません）" : "記録した打席を直しています");
+}
+function startEdit(id){
+  const pa = DB.pas.find(x=>x.id===id); if(!pa) return;
+  ST.playerId = pa.playerId; ST.gameId = pa.gameId; ST.pitcherId = pa.pitcherId;
+  ST.row = pa.row; ST.col = pa.col; ST.judge = pa.judge; ST.brk = pa.brk;
+  ST.result = pa.result; ST.outSafe = pa.outSafe;
+  ST.notes = new Set(pa.notes || []);
+
+  Array.from($("#zoneGrid").children).forEach(c=>c.setAttribute("aria-pressed",
+    String(c.dataset && +c.dataset.r===pa.row && +c.dataset.c===pa.col)));
+  Array.from($("#breakGrid").children).forEach(c=>c.setAttribute("aria-pressed",
+    String(c.dataset.k===pa.brk)));
+  chipSet("#selJudge", pa.judge || "");
+  chipSet("#selResult", pa.result || "");
+  chipSet("#selOutSafe", pa.outSafe || "");
+  Array.from($("#selNotes").children).forEach(c=>
+    c.setAttribute("aria-pressed", String(ST.notes.has(c.dataset.v))));
+  $("#outSafeWrap").style.display = RMAP[pa.result] && RMAP[pa.result].batted ? "block" : "none";
+
+  const pi = DB.pitchers.find(x=>x.id===pa.pitcherId);
+  const bats = curPlayer() ? curPlayer().bats : (pa.batsAt || "R");
+  $("#breakHint").textContent = pi
+    ? `${REL_LBL[breakRel(pa.brk,bats)]}　→　${KIND_LBL[pitchKind(pa.brk, pi.throws)]}` : "";
+
+  setEditing(id); updatePANote();
+  note("paNote","");
+  $("#cardPA").scrollIntoView({behavior:"smooth", block:"start"});
+}
+$("#btnCancelEdit").addEventListener("click", ()=>{ setEditing(null); clearPA(); });
+
+$("#btnClearPA").addEventListener("click", ()=>{ setEditing(null); clearPA(); });
 function clearPA(){
   ST.row=null; ST.col=null; ST.judge=null; ST.brk=null; ST.result=null; ST.outSafe=null; ST.notes.clear();
   Array.from($("#zoneGrid").children).forEach(c=>c.setAttribute("aria-pressed","false"));
@@ -1325,16 +1418,20 @@ function renderGamePAs(){
       const tag = isHit(pa) ? '<span class="tag h">安打</span>'
         : `<span class="tag o">${isAtBat(pa)?"凡退":"打数外"}</span>`;
       const nt = pa.notes.length ? "・" + pa.notes.map(k=>NMAP[k]).join("・") : "";
-      return `<div class="pa"><div class="ord">${i+1}</div><div class="bd">
+      return `<div class="pa"><div class="ord">${i+1}</div><div class="bd" data-edit="${pa.id}">
         <div class="t">${RMAP[pa.result].label}${nt}</div>
         <div class="s">${q.arrow} ${esc(REL_LBL[q.rel])}／${esc(q.where)}・${q.jd}</div>
         </div>${tag}
-        <button class="del wo" data-del="${pa.id}" type="button" aria-label="削除">✕</button></div>`;
+        <button class="del wo mo" data-del="${pa.id}" type="button" aria-label="削除">✕</button></div>`;
     }).join("") + "</div>";
+  if (canWrite !== false) host.querySelectorAll("[data-edit]").forEach(b=>{
+    b.addEventListener("click", ()=> startEdit(b.dataset.edit));
+  });
   host.querySelectorAll("[data-del]").forEach(b=>{
     b.addEventListener("click", async ()=>{
       if (!await ask("この打席の記録を消します。よろしいですか？")) return;
-      try{ await drop("pas", b.dataset.del); delete CACHE.pas[b.dataset.del]; rebuild(); renderGamePAs(); }
+      try{ if (ST.editId === b.dataset.del){ setEditing(null); clearPA(); }
+           await drop("pas", b.dataset.del); delete CACHE.pas[b.dataset.del]; rebuild(); renderGamePAs(); }
       catch(e){ writeFailed(e); }
     });
   });
@@ -1349,6 +1446,9 @@ function fillFilters(){
   $("#fPlayer").innerHTML = DB.players.map(p=>opt(p.id,`${p.name}（${BATS[p.bats]}）`,F.player)).join("")
     || '<option value="">—</option>';
   const opps = [...new Set(DB.games.map(g=>g.opponent))].sort();
+  $("#fRecent").innerHTML = opt("","すべての試合",F.recent)
+    + Object.entries(RECENTS).map(([k,v])=>opt(k,v,F.recent)).join("");
+  $("#fRank").innerHTML   = Object.entries(RANKS).map(([k,v])=>opt(k,v,rankKey)).join("");
   $("#fOpp").innerHTML    = opt("","すべて",F.opp) + opps.map(o=>opt(o,o,F.opp)).join("");
   $("#fThrows").innerHTML = opt("","すべて",F.throws) + Object.entries(THROWS).map(([k,v])=>opt(k,v,F.throws)).join("");
   $("#fArm").innerHTML    = opt("","すべて",F.arm) + Object.entries(ARMS).map(([k,v])=>opt(k,v,F.arm)).join("");
@@ -1359,20 +1459,34 @@ function fillFilters(){
   $("#fJudge").innerHTML  = opt("","すべて",F.judge)+opt("strike","ストライク",F.judge)+opt("ball","ボール球",F.judge);
   $("#fSide").innerHTML   = opt("","すべて",F.side) + Object.entries(SIDE_LBL).map(([k,v])=>opt(k,v,F.side)).join("");
 }
-[["#fPlayer","player"],["#fOpp","opp"],["#fThrows","throws"],["#fArm","arm"],
+document.addEventListener("change", e=>{
+  if (e.target && e.target.matches && e.target.matches("#fRank")){ rankKey = e.target.value; renderStats(); }
+});
+[["#fPlayer","player"],["#fRecent","recent"],["#fOpp","opp"],["#fThrows","throws"],["#fArm","arm"],
  ["#fVelo","velo"],["#fBreak","brk"],["#fJudge","judge"],["#fSide","side"]].forEach(([sel,key])=>{
   document.addEventListener("change", e=>{
     if (e.target && e.target.matches && e.target.matches(sel)){ F[key] = e.target.value; renderStats(); }
   });
 });
 $("#btnResetF").addEventListener("click", ()=>{
-  F.opp=F.throws=F.arm=F.velo=F.brk=F.judge=F.side=""; fillFilters(); renderStats();
+  F.recent=F.opp=F.throws=F.arm=F.velo=F.brk=F.judge=F.side=""; fillFilters(); renderStats();
 });
 
-function filtered(){
-  const bats = batsOf(F.player);
+// その選手が実際に打席に立った試合を、新しい順にn試合
+function recentGameIds(pid, n){
+  const ids = [...new Set(DB.pas.filter(p=>p.playerId===pid).map(p=>p.gameId))];
+  return new Set(ids.map(id=>DB.games.find(g=>g.id===id)).filter(Boolean)
+    .sort((a,b)=> String(b.date||"").localeCompare(String(a.date||""))
+               || String(b.id).localeCompare(String(a.id)))
+    .slice(0, n).map(g=>g.id));
+}
+function filtered(playerId){
+  const pid  = playerId || F.player;
+  const bats = batsOf(pid);
+  const rec  = F.recent ? recentGameIds(pid, +F.recent) : null;
   return DB.pas.filter(pa=>{
-    if (pa.playerId !== F.player) return false;
+    if (pa.playerId !== pid) return false;
+    if (rec && !rec.has(pa.gameId)) return false;
     const g  = DB.games.find(x=>x.id===pa.gameId);
     const pi = DB.pitchers.find(x=>x.id===pa.pitcherId);
     if (F.opp    && (!g  || g.opponent !== F.opp))   return false;
@@ -1475,6 +1589,36 @@ function groupRows(list, keyFn, order, labelFn){
 }
 
 /* ============================================================
+   分析：チーム内ランキング
+   ============================================================ */
+const RANK_MIN_AB = 3;   // 打数がこれ未満の選手は順位に入れない
+function renderRank(){
+  const el = $("#tRank");
+  const rows = DB.players
+    .map(pl => ({ pl, s: avgOf(filtered(pl.id)) }))
+    .filter(r => r.s.ab >= RANK_MIN_AB && r.s.obp !== null && r.s.ops !== null)
+    .sort((a,b) => b.s[rankKey] - a.s[rankKey] || b.s.ab - a.s.ab)
+    .slice(0, 10);
+
+  if (!rows.length){
+    el.innerHTML = '<tbody><tr><td class="empty-note" colspan="5">該当なし</td></tr></tbody>';
+    note("rkNote", `打数${RANK_MIN_AB}以上の選手がまだいません。`);
+    return;
+  }
+  el.innerHTML =
+    `<thead><tr><th>順位</th><th>選手</th><th>出塁率</th><th>OPS</th><th>打数</th></tr></thead><tbody>` +
+    rows.map((r,i)=>{
+      const me = (r.pl.id === F.player) ? ' class="me"' : "";
+      const hi = k => k===rankKey ? ' style="font-weight:700"' : "";
+      return `<tr${me}><td>${i+1}</td><td class="lab">${esc(r.pl.name)}</td>
+        <td${hi("obp")}>${fmtAvg(r.s.obp)}</td><td${hi("ops")}>${fmtAvg(r.s.ops)}</td>
+        <td>${r.s.ab}</td></tr>`;
+    }).join("") + "</tbody>";
+  note("rkNote", `打数${RANK_MIN_AB}以上が対象です。`
+    + `「打者」以外の絞り込み（期間・相手校・投手・球種など）は全員に同じようにかかります。`);
+}
+
+/* ============================================================
    分析：描画
    ============================================================ */
 function renderStats(){
@@ -1484,6 +1628,7 @@ function renderStats(){
      "#sBB","#sHBP","#sSAC","#sSO"].forEach(s=>$(s).textContent="—");
     note("sNote", storeReady ? "選手を登録して打席を記録すると集計されます。" : "読み込み中です…");
     $("#heatmap").innerHTML=""; $("#hmLegend").innerHTML=""; $("#hmBase").textContent="";
+    $("#tRank").innerHTML=""; note("rkNote","");
     ["#tSide","#tHeight","#tBreak","#tMove","#tPitcher","#tQuality"].forEach(s=>$(s).innerHTML="");
     return;
   }
@@ -1514,6 +1659,7 @@ function renderStats(){
   $("#hmBase").innerHTML = baseline===null ? ""
     : `色は絞り込み後の打率 <b>${fmtAvg(baseline)}</b> との差です。赤いほど得意、青いほど苦手。`;
 
+  renderRank();
   renderHeatmap(list, baseline);
   tableOf("#tSide","コース", groupRows(list, pa=>inOut(pa.col,bats), ["in","mid","out"], k=>SIDE_LBL[k]), baseline);
   tableOf("#tHeight","高さ", groupRows(list, pa=>heightBand(pa.row), ["high","mid","low"], k=>H_LBL[k]), baseline);
@@ -1678,7 +1824,7 @@ function loginErr(msg){
   if (msg){ e.textContent = msg; e.classList.add("on"); } else { e.classList.remove("on"); }
 }
 function showLogin(msg){
-  ME = null; canWrite = null; canAdmin = false; storeReady = false;
+  ME = null; canWrite = null; canAdmin = false; isManager = false; storeReady = false;
   setToken(null);
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   document.body.classList.remove("adm");
@@ -1691,8 +1837,9 @@ function showLogin(msg){
 }
 function afterLogin(u){
   ME = u;
-  canAdmin = (u.role === "admin");
-  canWrite = (u.role !== "viewer");
+  canAdmin  = (u.role === "admin");
+  isManager = (u.role === "manager");
+  canWrite  = (u.role !== "viewer");
   $("#login").classList.remove("on");
   loginErr("");
   $("#liPw").value = "";

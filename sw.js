@@ -1,6 +1,6 @@
 // 打撃データ分析 ― オフライン対応とホーム画面インストール用
-const VERSION = 'bb-v2';
-const SHELL = ['./index.html','./manifest.json','./logo.png','./icon-192.png','./icon-512.png'];
+const VERSION = 'bb-v9';
+const SHELL = ['./index.html','./manifest.json','./logo.png','./icon-192.png','./icon-512.png','./field.jpg','./field-l.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
