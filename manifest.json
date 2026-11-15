@@ -1,7 +1,7 @@
 {
-  "name": "深谷第一高校野球部 打撃データ分析",
-  "short_name": "深谷一 打撃",
-  "description": "打席のコース・球種・結果を記録し、得意コースと苦手コースを見える化します。",
+  "name": "深谷第一高校野球部 チームデータ分析",
+  "short_name": "深谷一 野球部",
+  "description": "打撃と投球のデータを記録し、得意・苦手を見える化します。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>深谷第一高校野球部 打撃データ分析</title>
+<title>深谷第一高校野球部 チームデータ分析</title>
 <meta name="theme-color" content="#0075C6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="深谷一 打撃">
@@ -294,7 +294,7 @@ body.adm nav.tabs button.ao{display:flex}
 <header>
   <div class="inner">
     <img class="logo" src="logo.png" alt="深谷第一高校野球部">
-    <div class="ttl"><h1>深谷第一高校 野球部</h1><div class="st">打撃データ分析</div></div>
+    <div class="ttl"><h1>深谷第一高校 野球部</h1><div class="st">チームデータ分析</div></div>
     <span class="sub" id="curPlayerLbl"></span>
     <button class="themebtn" id="menuBtn" type="button" aria-label="メニュー">⋯</button>
   </div>
@@ -515,6 +515,9 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card wo">
     <h2>この回のまとめ<span class="hint">投手ごと</span></h2>
     <div class="cur" id="innCtx">—</div>
+    <div class="chips" id="innTb" style="margin-bottom:12px">
+      <button class="chip" type="button" data-v="1" aria-pressed="false">タイブレークの回</button>
+    </div>
     <label class="fld">球数の入れ方<span style="font-weight:400;color:var(--muted)">（スコアブックに合わせて）</span></label>
     <div class="chips" id="innMode">
       <button class="chip" type="button" data-v="inning" aria-pressed="true">この回だけ</button>
@@ -536,7 +539,8 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="note" id="innNote"></div>
     <div class="note">途中で交代した回は、投手を切り替えてそれぞれ保存してください。<br>
       累計で入れるときは、回の順に入れてください（前の回が入っていないと差し引きできません）。<br>
-      「その他のアウト」は牽制死・盗塁死・走塁死など、打者の結果に出ないアウトの数です。無ければ空欄で大丈夫です。</div>
+      「その他のアウト」は牽制死・盗塁死・走塁死など、打者の結果に出ないアウトの数です。無ければ空欄で大丈夫です。<br>
+      延長のタイブレークは無死一・二塁から始まるので、その回は「タイブレークの回」を押してください。失点の平均から外して数えます（打者の記録や球数はそのまま使います）。</div>
   </div>
 
   <div class="card">
@@ -666,7 +670,7 @@ body.adm nav.tabs button.ao{display:flex}
         <div class="tile"><div class="k">被打率</div><div class="v" id="pBAA">—</div></div>
         <div class="tile"><div class="k">投球回</div><div class="v" id="pIP">—</div></div>
         <div class="tile"><div class="k">1回あたり球数</div><div class="v" id="pPPI">—</div></div>
-        <div class="tile"><div class="k">1回あたり失点</div><div class="v" id="pRPI">—</div></div>
+        <div class="tile"><div class="k">失点率<span class="hint" style="display:block;font-size:9px">9回あたり</span></div><div class="v" id="pRPI">—</div></div>
       </div>
       <div class="note" id="pSumNote"></div>
     </div>
@@ -786,8 +790,11 @@ body.adm nav.tabs button.ao{display:flex}
 
   <div class="card wo">
     <h2>お試し</h2>
-    <div class="note" style="margin-top:0">動きを確認したいときはサンプルを入れてみてください。既存データは消えません。</div>
-    <div class="btnrow"><button class="btn sec" id="btnSample" type="button">サンプルデータを追加</button></div>
+    <div class="note" style="margin-top:0">動きを確認したいときはサンプルを入れてみてください。打者4人・投手4人・8試合ぶんが入ります。それぞれ特徴を付けてあるので、分析の見方を試すのに使えます。既存のデータは消えません。「サンプルを消す」でサンプルだけまとめて消せます。</div>
+    <div class="btnrow">
+      <button class="btn sec" id="btnSample" type="button">サンプルデータを追加</button>
+      <button class="btn sec" id="btnSampleDel" type="button">サンプルを消す</button>
+    </div>
   </div>
 
   <div class="card wo">
@@ -809,7 +816,7 @@ body.adm nav.tabs button.ao{display:flex}
 <div id="login" class="on"><div class="lbox">
   <img class="llogo" src="logo.png" alt="">
   <h2>深谷第一高校 野球部</h2>
-  <p class="lsub">打撃データ分析</p>
+  <p class="lsub">チームデータ分析</p>
   <div class="lerr" id="loginErr"></div>
 
   <div id="loginBody">
@@ -1990,58 +1997,182 @@ $("#btnWipe").addEventListener("click", async ()=>{
 });
 
 /* ---- サンプル ---- */
+// 打者4種類・投手4種類。どれも特徴をはっきり付けてあるので、
+// 分析の見方を試したり、選手に説明したりするのに使えます。
+const SAMPLE_BATTERS = [
+  // inHit/outHit＝イン・アウトを打てる確率、brkAdj＝変化球のときの増減
+  {name:"見本1 引っ張り", bats:"R", inHit:.56, outHit:.17, brkAdj:-.04, eye:.05},
+  {name:"見本2 広角",     bats:"L", inHit:.20, outHit:.46, brkAdj:-.02, eye:.08},
+  {name:"見本3 直球型",   bats:"R", inHit:.54, outHit:.48, brkAdj:-.34, eye:.06},
+  {name:"見本4 出塁型",   bats:"L", inHit:.26, outHit:.28, brkAdj:-.06, eye:.24}
+];
+const SAMPLE_ARMS = [
+  {name:"見本A 制球",   throws:"R", f1:.80, bb:.03, k:.15, hit:.22, gb:.72, fade:.02, vsL:-.02},
+  {name:"見本B 奪三振", throws:"L", f1:.52, bb:.17, k:.35, hit:.16, gb:.36, fade:.05, vsL:+.03},
+  {name:"見本C 後半",   throws:"R", f1:.76, bb:.04, k:.18, hit:.18, gb:.60, fade:.36, vsL:-.03},
+  {name:"見本D 対左",   throws:"R", f1:.74, bb:.05, k:.20, hit:.18, gb:.66, fade:.04, vsL:-.32}
+];
 $("#btnSample").addEventListener("click", async ()=>{
-  const pl = {id:uid(), name:"サンプル 太郎", bats:"R"};
-  const specs = [
-    {opp:"県立一高",date:"2026-04-12",ps:[{throws:"R",arm:"over",velo:"fast"},{throws:"L",arm:"three",velo:"normal"}]},
-    {opp:"西工業",  date:"2026-04-20",ps:[{throws:"L",arm:"side",velo:"slow"}]},
-    {opp:"東学園",  date:"2026-05-03",ps:[{throws:"R",arm:"three",velo:"normal"},{throws:"R",arm:"under",velo:"slow"}]}
-  ];
-  const brks = ["straight","E","SE","S","W","SW","N","NE","NW"];
-  const rs   = ["fly","liner","hardGrounder","weakGrounder","swingingK","calledK","walk"];
+  const btn = $("#btnSample");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const S = {sample:true};
   let seed = 0x9e3779b9;
-  const rnd = n => {
+  const rnd = () => {
     seed = (seed + 0x6D2B79F5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return (((t ^ (t >>> 14)) >>> 0) / 4294967296 * n) | 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  const batch = [["players",pl]];
+  const pick = a => a[Math.min(a.length-1, (rnd()*a.length)|0)];
+  const batch = [];
 
-  specs.forEach(sp=>{
-    const g = {id:uid(), date:sp.date, opponent:sp.opp};
-    batch.push(["games",g]);
-    const pids = sp.ps.map((x,i)=>{
-      const p = Object.assign({id:uid(), gameId:g.id, label:"", ts: new Date(sp.date).getTime()+i}, x);
-      batch.push(["pitchers",p]); return p.id;
-    });
-    for (let i=0;i<9;i++){
-      const row = 1 + rnd(3);
-      const col = (rnd(10) < 7) ? 1 + rnd(3) : rnd(5);
-      const res = rs[rnd(rs.length)];
-      const batted = RMAP[res].batted;
-      const side = inOut(col,"R");
-      const bias = side==="in" ? 22 : (side==="out" ? 55 : 38);
-      const safe = batted && (rnd(100) < bias);
-      batch.push(["pas",{
-        id:uid(), playerId:pl.id, gameId:g.id, pitcherId:pids[rnd(pids.length)],
-        ts:new Date(sp.date).getTime()+i*600000,
-        row, col, judge: inStrikeZone(row,col)?"strike":"ball",
-        brk:brks[rnd(brks.length)], result:res,
-        outSafe: batted ? (safe?"safe":"out") : (res==="walk"?null:"out"),
-        notes:(!batted||safe) ? [] : (rnd(10)<2 ? ["advance"] : (rnd(12)<2 ? ["sacBunt"] : [])),
-        batsAt:"R"
-      }]);
-    }
+  const bats = SAMPLE_BATTERS.map(b=>{
+    const o = Object.assign({id:uid(), name:b.name, bats:b.bats}, S);
+    batch.push(["players",o]); return Object.assign({}, b, {id:o.id});
+  });
+  const arms = SAMPLE_ARMS.map(a=>{
+    const o = Object.assign({id:uid(), name:a.name, throws:a.throws}, S);
+    batch.push(["arms",o]); return Object.assign({}, a, {id:o.id});
   });
 
+  const C7 = i => [[1,i],[2,i],[3,i],[4,i],[5,i],[6,i],[7,i]];
+  const GAMES = [
+    {opp:"県立一高", date:"2026-04-05", plan:C7(0)},
+    {opp:"西工業",   date:"2026-04-12", plan:[[1,1],[2,1],[3,1],[4,1],[5,3],[6,3],[7,3]]},
+    {opp:"東学園",   date:"2026-04-19", plan:C7(2)},
+    {opp:"熊谷商",   date:"2026-04-26", plan:C7(3)},
+    {opp:"本庄東",   date:"2026-05-03", plan:C7(2)},
+    {opp:"深谷商",   date:"2026-05-10", plan:[[1,1],[2,1],[3,1],[4,1],[5,0],[6,0],[7,0]]},
+    {opp:"寄居北",   date:"2026-05-17", plan:[[1,1],[2,1],[3,1],[4,1],[5,1],[6,0],[7,0]]},
+    {opp:"行田工",   date:"2026-05-24", plan:[[1,3],[2,3],[3,3],[4,3],[5,2],[6,2],[7,2]]}
+  ];
+  // 変化球ばかりにならないよう、ストレートを多めに
+  const BRKS = ["straight","straight","straight","E","SE","S","W","SW","N"];
+  const BRES = ["strikeout","groundOut","flyOut","dp","hit","walk","hbp","error","sac"];
+
+  GAMES.forEach(G=>{
+    const g = Object.assign({id:uid(), date:G.date, opponent:G.opp}, S);
+    batch.push(["games",g]);
+    const base = new Date(G.date).getTime();
+
+    // --- 相手の打順（左右） ---
+    const olu = {}; const lineupBats = {};
+    for (let p=1;p<=9;p++){ const v = rnd() < .38 ? "L" : "R"; olu[p]=v; lineupBats[p]=v; }
+    batch.push(["olu", Object.assign({id:uid(), gameId:g.id, bats:olu}, S)]);
+
+    // --- 自チームの打撃 ---
+    const opps = [{throws:"R",arm:"over",velo:"fast"},{throws:"L",arm:"three",velo:"normal"}]
+      .map((x,i)=>{ const o = Object.assign({id:uid(), gameId:g.id, label:"", ts:base+i}, x, S);
+                    batch.push(["pitchers",o]); return o; });
+    bats.forEach((b,bi)=>{
+      for (let i=0;i<4;i++){
+        const op  = pick(opps);
+        const row = 1 + ((rnd()*3)|0);
+        const col = rnd() < .72 ? 1 + ((rnd()*3)|0) : ((rnd()*5)|0);
+        const brk = pick(BRKS);
+        const side = inOut(col, b.bats);
+        let pHit = side==="in" ? b.inHit : (side==="out" ? b.outHit : (b.inHit+b.outHit)/2);
+        if (brk !== "straight") pHit += b.brkAdj;
+        pHit = Math.max(.04, Math.min(.72, pHit));
+        if (rnd() < b.eye){
+          batch.push(["pas", Object.assign({id:uid(), playerId:b.id, gameId:g.id, pitcherId:op.id,
+            ts:base+bi*1000+i*60000, row:0, col:0, judge:"ball", brk:"straight",
+            result:"walk", outSafe:null, notes:[], batsAt:b.bats}, S)]);
+          continue;
+        }
+        const safe = rnd() < pHit;
+        const res  = safe ? pick(["liner","hardGrounder","fly"])
+                          : pick(["fly","weakGrounder","hardGrounder","swingingK","calledK","liner"]);
+        const batted = RMAP[res].batted;
+        const note = !safe ? [] : (rnd()<.12 ? ["double"] : (rnd()<.05 ? ["homerun"] : ["single"]));
+        batch.push(["pas", Object.assign({id:uid(), playerId:b.id, gameId:g.id, pitcherId:op.id,
+          ts:base+bi*1000+i*60000, row, col,
+          judge: inStrikeZone(row,col)?"strike":"ball", brk, result:res,
+          outSafe: batted ? (safe?"safe":"out") : "out",
+          notes: batted ? note : [], batsAt:b.bats}, S)]);
+      }
+    });
+
+    // --- 相手打線（自チームの投球） ---
+    const thrown = {};              // 投手ごとの累計球数
+    let lineupPos = 1;
+    G.plan.forEach(([inning, ai])=>{
+      const A = arms[ai];
+      thrown[A.id] = thrown[A.id] || 0;
+      let outs = 0, onbase = 0, pitches = 0, nb = 0;
+      while (outs < 3 && nb < 9){
+        const lu = lineupPos; lineupPos = lu === 9 ? 1 : lu + 1; nb++;
+        const vsL = lineupBats[lu] === "L";
+        const tired = thrown[A.id] > 45;
+        let f1 = A.f1 + (vsL ? A.vsL : 0) - (tired ? A.fade : 0);
+        f1 = Math.max(.15, Math.min(.92, f1));
+        const first = rnd() < f1 ? "strike" : "ball";
+        const r = rnd();
+        const bbP  = A.bb + (vsL ? -A.vsL*.5 : 0) + (tired ? A.fade*.4 : 0);
+        const hitP = A.hit + (vsL ? -A.vsL*.6 : 0) + (tired ? A.fade*.5 : 0);
+        let res;
+        if (r < A.k) res = "strikeout";
+        else if (r < A.k + bbP) res = rnd() < .85 ? "walk" : "hbp";
+        else if (r < A.k + bbP + hitP) res = "hit";
+        else if (r < A.k + bbP + hitP + .03) res = "error";
+        else if (r < A.k + bbP + hitP + .05) res = "sac";
+        else res = (rnd() < A.gb) ? ((onbase && rnd() < .22) ? "dp" : "groundOut") : "flyOut";
+        if (res === "strikeout" || res === "groundOut" || res === "flyOut") outs += 1;
+        else if (res === "dp") outs += 2;
+        else if (res === "sac") outs += 1;
+        else onbase += 1;
+        pitches += first === "strike" ? 3 + ((rnd()*3)|0) : 4 + ((rnd()*4)|0);
+        batch.push(["bf", Object.assign({id:uid(), gameId:g.id, inning, armId:A.id, lineup:lu,
+          ts: base + inning*100000 + nb*1000, first, result:res}, S)]);
+      }
+      thrown[A.id] += pitches;
+      const runs = onbase >= 4 ? 2 + ((rnd()*2)|0) : (onbase === 3 ? 1 + ((rnd()*2)|0)
+                 : (onbase === 2 && rnd() < .35 ? 1 : 0));
+      batch.push(["inn", Object.assign({id:uid(), gameId:g.id, inning, armId:A.id,
+        pitches, runs, extraOuts:0, tb:false}, S)]);
+    });
+  });
+
+  // --- まとめて保存（並列で速く）---
   try{
-    for (const [c,obj] of batch){ await put(c,obj); CACHE[c][obj.id] = obj; }
+    note("ioNote", `サンプルを作っています…（${batch.length}件）`);
+    for (let i=0;i<batch.length;i+=10){
+      const part = batch.slice(i, i+10);
+      await Promise.all(part.map(([c,obj])=>put(c,obj)));
+      part.forEach(([c,obj])=>{ CACHE[c][obj.id] = obj; });
+      note("ioNote", `サンプルを作っています… ${Math.min(i+10,batch.length)} / ${batch.length}件`);
+    }
     rebuild();
-    ST.playerId = pl.id; F.player = pl.id; ST.gameId = null; ST.pitcherId = null;
+    ST.playerId = bats[0].id; F.player = bats[0].id;
+    PST.armId = arms[0].id;   PF.arm   = arms[0].id;
+    ST.gameId = null; ST.pitcherId = null; PST.gameId = null;
     renderPlayers(); renderGames(); renderAll(); renderPlayerList();
-    note("ioNote","サンプルを追加しました。分析タブで見てみてください。");
+    note("ioNote", `サンプルを追加しました（打者4人・投手4人・8試合／${batch.length}件）。分析タブで見てみてください。`);
   }catch(e){ writeFailed(e); }
+  finally{ btn.disabled = false; }
+});
+
+$("#btnSampleDel").addEventListener("click", async ()=>{
+  const targets = [];
+  COLLS.forEach(c=>Object.values(CACHE[c]).forEach(o=>{ if(o && o.sample) targets.push([c,o.id]); }));
+  if (!targets.length){ note("ioNote","サンプルは入っていません。"); return; }
+  if (!await ask(`サンプルの記録を${targets.length}件すべて消します。\nご自分で入れたデータは消えません。よろしいですか？`)) return;
+  const btn = $("#btnSampleDel"); btn.disabled = true;
+  try{
+    for (let i=0;i<targets.length;i+=8){
+      const part = targets.slice(i, i+8);
+      await Promise.all(part.map(([c,id])=>drop(c,id)));
+      part.forEach(([c,id])=>{ delete CACHE[c][id]; });
+      note("ioNote", `消しています… ${Math.min(i+8,targets.length)} / ${targets.length}件`);
+    }
+    rebuild();
+    ST.playerId = DB.players[0] ? DB.players[0].id : null; F.player = ST.playerId || "";
+    PST.armId = DB.arms[0] ? DB.arms[0].id : null; PF.arm = PST.armId || "";
+    renderPlayers(); renderGames(); renderAll(); renderPlayerList();
+    note("ioNote","サンプルを消しました。");
+  }catch(e){ writeFailed(e); }
+  finally{ btn.disabled = false; }
 });
 
 /* ============================================================
@@ -2326,7 +2457,7 @@ const PST = {gameId:null, armId:null, inning:1, lineup:null, firstArmId:null, ba
              first:null, result:null, editId:null};
 const PF  = {arm:"", recent:"", opp:""};
 const PRANKS = {f1:"初球ストライク率の高い順", lead:"先頭を切った率の高い順",
-                bb:"与四死球率の低い順", baa:"被打率の低い順"};
+                rp9:"失点率の低い順", bb:"与四死球率の低い順", baa:"被打率の低い順"};
 let pRankKey = "f1";
 let statMode = "bat";
 const RANK_MIN_BF = 10;   // 対戦打者がこれ未満の投手は順位に入れない
@@ -2347,6 +2478,7 @@ function pitchesBefore(gid, i, armId){
                        && Number(x.inning) < Number(i) && x.pitches!=null)
                .reduce((t,x)=>t+x.pitches, 0);
 }
+let innTb = false;
 let innPitchMode = "inning";
 try{ innPitchMode = localStorage.getItem("bbInnMode") || "inning"; }catch(e){}
 // 打順が入っていれば打順から、無ければ記録した順に並べる。
@@ -2401,7 +2533,7 @@ function renderPSelectors(){
   $("#selArm").innerHTML = DB.arms.length
     ? DB.arms.map(a=>pOpt(a.id, `${a.name}（${THROW_LBL[a.throws]||""}）`, PST.armId)).join("")
     : '<option value="">投手がいません</option>';
-  $("#selInning").innerHTML = Array.from({length:15},(_,i)=>pOpt(i+1, `${i+1}回`, PST.inning)).join("");
+  $("#selInning").innerHTML = Array.from({length:20},(_,i)=>pOpt(i+1, `${i+1}回`, PST.inning)).join("");
   const g = curPGame(), a = curArm();
   $("#pCtx").innerHTML = (g && a)
     ? `<b>${esc(a.name)}</b>（${THROW_LBL[a.throws]}）が <b>${esc(g.opponent||"")}</b> の <b>${PST.inning}回</b>`
@@ -2418,6 +2550,7 @@ function renderPSelectors(){
     ? (innPitchMode==="total" ? prev + r.pitches : r.pitches) : "";
   $("#innRuns").value    = r && r.runs!=null      ? r.runs      : "";
   $("#innOuts").value    = r && r.extraOuts!=null ? r.extraOuts : "";
+  innTb = !!(r && r.tb); chipSet("#innTb", innTb ? "1" : "");
   updateInnCalc();
 }
 // 入れた数字が「この回」と「累計」でそれぞれ何球になるかを出す
@@ -2495,7 +2628,7 @@ function renderSbGrid(){
   const el = $("#sbGrid"); if(!el) return;
   const used = [...new Set(DB.bf.filter(x=>x.gameId===PST.gameId).map(x=>Number(x.inning)))];
   const maxI = Math.max(7, PST.inning, ...(used.length?used:[0]));
-  const cols = Array.from({length:Math.min(maxI+1,15)},(_,i)=>i+1);
+  const cols = Array.from({length:Math.min(maxI+1,20)},(_,i)=>i+1);
   let head = '<thead><tr><th></th>' + cols.map(i=>`<th>${i}回</th>`).join("") + '</tr></thead>';
   let body = '<tbody>';
   for (let p=1; p<=LINEUP_N; p++){
@@ -2702,6 +2835,9 @@ $("#btnSaveBF").addEventListener("click", async ()=>{
     if ($("#p-stats").classList.contains("on")) renderStatsAll();
   }catch(e){ writeFailed(e); }
 });
+$("#innTb").addEventListener("click", ()=>{
+  innTb = !innTb; chipSet("#innTb", innTb ? "1" : "");
+});
 $("#innMode").addEventListener("click", e=>{
   const c = e.target.closest(".chip"); if(!c) return;
   innPitchMode = c.dataset.v;
@@ -2738,7 +2874,8 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
   const rec = { ...(old || {id:uid()}), gameId:PST.gameId, inning:PST.inning, armId:PST.armId,
     pitches,
     runs:      num($("#innRuns").value.trim(), 30),
-    extraOuts: num($("#innOuts").value.trim(), 9) };
+    extraOuts: num($("#innOuts").value.trim(), 9),
+    tb:        innTb || false };
   try{ await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild(); renderPAll();
        note("innNote", `${PST.inning}回（${(curArm()||{}).name||""}）を保存しました。`);
        if ($("#p-stats").classList.contains("on")) renderStatsAll(); }
@@ -2786,15 +2923,21 @@ function pStatsOf(bfs, inns, firsts){
   const extra = inns.reduce((t,x)=>t + (x.extraOuts||0), 0);
   const outs = k + go + dp*2 + fo + sc + extra;
   const f1   = fl.filter(x=>x.first==="strike").length;
-  const withP = inns.filter(x=>x.pitches!=null), withR = inns.filter(x=>x.runs!=null);
+  const withP = inns.filter(x=>x.pitches!=null);
+  // タイブレークは無死一・二塁から始まるので、失点の平均からは外す
+  const withR = inns.filter(x=>x.runs!=null && !x.tb);
+  const tbInn = inns.filter(x=>x.tb && x.runs!=null);
   const pitches = withP.reduce((t,x)=>t+x.pitches,0);
   const runs    = withR.reduce((t,x)=>t+x.runs,0);
+  const tbRuns  = tbInn.reduce((t,x)=>t+x.runs,0);
   const ip = outs/3;
   return { n,k,bb,hb,h,go,fo,er,sc,dp,ab,outs,pitches,runs,extra,ip,
+    tbCount:tbInn.length, tbRuns,
     nf:fl.length, f1rate:fl.length?f1/fl.length:null, krate:n?k/n:null, bbrate:n?(bb+hb)/n:null,
     baa:ab?h/ab:null,
     ppi: ip>0 && withP.length ? pitches/ip : null,            // 1イニング換算の球数
     rpi: ip>0 && withR.length ? runs/ip : null,               // 1イニング換算の失点
+    rp9: ip>0 && withR.length ? runs*9/ip : null,             // 9回換算の失点率
     gf : fo ? (go+dp)/fo : null };
 }
 // 回の先頭打者を切れたかどうかで分ける。
@@ -2802,7 +2945,7 @@ function pStatsOf(bfs, inns, firsts){
 function leadStats(bfs, inns){
   const mine = new Set(bfs.map(x=>x.id));
   const runsOf = {};
-  inns.forEach(x=>{ if(x.runs!=null) runsOf[x.gameId+"#"+x.inning] = x.runs; });
+  inns.forEach(x=>{ if(x.runs!=null && !x.tb) runsOf[x.gameId+"#"+x.inning] = x.runs; });
   const keys = [...new Set(bfs.map(x=>x.gameId+"#"+x.inning))];
   let on=0, off=0, onR=0, offR=0, onI=0, offI=0;
   keys.forEach(k=>{
@@ -2851,12 +2994,14 @@ function renderPStats(){
   set("#pBAA",  fmtAvg(st.baa));
   set("#pIP",   st.n ? (Math.floor(st.outs/3) + (st.outs%3 ? " " + (st.outs%3) + "/3" : "")) : "—");
   set("#pPPI",  st.ppi==null ? "—" : st.ppi.toFixed(1));
-  set("#pRPI",  st.rpi==null ? "—" : st.rpi.toFixed(2));
+  set("#pRPI",  st.rp9==null ? "—" : st.rp9.toFixed(2));
   note("pSumNote", st.n
     ? `対戦打者${st.n}人／三振${st.k}・四球${st.bb}・死球${st.hb}・被安打${st.h}・併殺${st.dp}`
       + `／投球回はアウト数（併殺は2・その他のアウトを含む）から計算しています。`
-      + `1回あたりの球数と失点は、投球回で割った数です。`
+      + `失点率は「失点×9÷投球回」。自責点ではなく失点で計算しているので、`
+      + `エラーがらみの失点も含みます（本来の防御率よりやや高く出ます）。`
       + (st.nf !== st.n ? `初球ストライク率は、この投手が初球を投げた${st.nf}打席で計算しています。` : "")
+      + (st.tbCount ? `タイブレークの${st.tbCount}回（${st.tbRuns}失点）は、失点の平均から外しています。` : "")
     : "まだ記録がありません。投球タブから記録してください。");
 
   // 先頭打者
@@ -2878,7 +3023,8 @@ function renderPStats(){
       + ns.map(i=>{
           const b = bfs.filter(x=>Number(x.inning)===i), v = inns.filter(x=>Number(x.inning)===i);
           const t = pStatsOf(b, v, firsts.filter(x=>Number(x.inning)===i));
-          return `<tr><td>${i}回</td><td>${Math.max(b.length?1:0, v.length)}</td>`
+          const anyTb = v.some(x=>x.tb);
+          return `<tr><td>${i}回${anyTb?"<span class='s'> TB</span>":""}</td><td>${Math.max(b.length?1:0, v.length)}</td>`
                + `<td>${fmtPct(t.f1rate)}</td><td>${t.ppi==null?"—":t.ppi.toFixed(1)}</td>`
                + `<td>${t.rpi==null?"—":t.rpi.toFixed(2)}</td><td>${fmtAvg(t.baa)}</td></tr>`;
         }).join("") + '</tbody>'
@@ -2966,23 +3112,25 @@ function renderPRank(){
     const {bfs, inns, firsts} = pSplit(a.id);
     return { a, s: pStatsOf(bfs, inns, firsts), l: leadStats(bfs, inns) };
   }).filter(r => r.s.n >= RANK_MIN_BF);
-  const val = r => pRankKey==="f1" ? r.s.f1rate : pRankKey==="lead" ? r.l.hold
-                 : pRankKey==="bb" ? r.s.bbrate : r.s.baa;
-  const asc = (pRankKey==="bb" || pRankKey==="baa");  // 四死球と被打率だけ低いほうが良い
+  const val = r => pRankKey==="f1"  ? r.s.f1rate : pRankKey==="lead" ? r.l.hold
+                 : pRankKey==="rp9" ? r.s.rp9
+                 : pRankKey==="bb"  ? r.s.bbrate : r.s.baa;
+  const asc = (pRankKey==="bb" || pRankKey==="baa" || pRankKey==="rp9");
   rows.sort((x,y)=>{ const a=val(x), b=val(y);
     if (a==null) return 1; if (b==null) return -1;
     return asc ? a-b : b-a; });
   const top = rows.slice(0,10);
   if (!top.length){
-    el.innerHTML = '<tbody><tr><td class="empty-note" colspan="6">該当なし</td></tr></tbody>';
+    el.innerHTML = '<tbody><tr><td class="empty-note" colspan="7">該当なし</td></tr></tbody>';
     note("prkNote", `対戦打者${RANK_MIN_BF}人以上の投手がまだいません。`); return;
   }
-  el.innerHTML = '<thead><tr><th>順位</th><th>投手</th><th>初球</th><th>先頭を切る</th><th>四死球</th><th>被打率</th></tr></thead><tbody>'
+  el.innerHTML = '<thead><tr><th>順位</th><th>投手</th><th>初球</th><th>先頭を切る</th><th>失点率</th><th>四死球</th><th>被打率</th></tr></thead><tbody>'
     + top.map((r,i)=>{
         const me = r.a.id===PF.arm ? ' class="me"' : "";
         const hi = k => k===pRankKey ? ' style="font-weight:700"' : "";
         return `<tr${me}><td>${i+1}</td><td class="lab">${esc(r.a.name)}</td>`
           + `<td${hi("f1")}>${fmtPct(r.s.f1rate)}</td><td${hi("lead")}>${fmtPct(r.l.hold)}</td>`
+          + `<td${hi("rp9")}>${r.s.rp9==null?"—":r.s.rp9.toFixed(2)}</td>`
           + `<td${hi("bb")}>${fmtPct(r.s.bbrate)}</td><td${hi("baa")}>${fmtAvg(r.s.baa)}</td></tr>`;
       }).join("") + '</tbody>';
   note("prkNote", `対戦打者${RANK_MIN_BF}人以上が対象です。「投手」以外の絞り込みは全員に同じようにかかります。`);
