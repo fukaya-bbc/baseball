@@ -378,7 +378,7 @@ body.adm nav.tabs button.ao{display:flex}
     </div>
 
     <div style="margin-top:14px" class="mlock">
-      <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート／↑＝チェンジアップなど遅い球）</span></label>
+      <label class="fld">③ 球種<span style="font-weight:400;color:var(--muted)">（曲がった方向・打者目線／中央＝ストレート／↑＝チェンジアップなど遅い球／カット・ツーシームは横に入れてください）</span></label>
       <div class="grid3" id="breakGrid"></div>
       <div class="bhint" id="breakHint"></div>
     </div>
@@ -652,10 +652,12 @@ const THROWS = {R:"右投げ", L:"左投げ"};
 const BATS   = {R:"右打ち", L:"左打ち"};
 
 const BREAKS = [
-  {k:"NW",arrow:"↖"}, {k:"N",arrow:"↑"}, {k:"NE",arrow:"↗"},
-  {k:"W", arrow:"←"}, {k:"straight",arrow:"●"}, {k:"E",arrow:"→"},
-  {k:"SW",arrow:"↙"}, {k:"S",arrow:"↓"}, {k:"SE",arrow:"↘"}
+                              {k:"N",arrow:"↑",r:1,c:2},
+  {k:"W", arrow:"←",r:2,c:1}, {k:"straight",arrow:"●",r:2,c:2}, {k:"E",arrow:"→",r:2,c:3},
+  {k:"SW",arrow:"↙",r:3,c:1}, {k:"S",arrow:"↓",r:3,c:2},        {k:"SE",arrow:"↘",r:3,c:3}
 ];
+// 斜め上はやめたので、前に記録した ↖ ↗ は横（← →）として扱う
+function normBrk(k){ return k === "NE" ? "E" : (k === "NW" ? "W" : k); }
 
 const RESULTS = [
   {k:"fly",label:"フライ系",batted:true},
@@ -708,55 +710,51 @@ function inStrikeZone(row,col){ return row>=1 && row<=3 && col>=1 && col<=3; }
 function zone9(row,col){ return inStrikeZone(row,col) ? (row-1)*3 + (col-1) + 1 : null; }
 
 function breakRel(k, bats){
+  k = normBrk(k);
   if (k === "straight") return "none";
   if (k === "N") return "rise";
   if (k === "S") return "drop";
-  const viewerRight = (k==="E"||k==="NE"||k==="SE");
+  const viewerRight = (k==="E"||k==="SE");
   const away = bats === "R" ? viewerRight : !viewerRight;
-  const diag = (k==="NE"||k==="SE"||k==="NW"||k==="SW");
-  if (!diag) return away ? "away" : "inside";
-  const down = (k==="SE"||k==="SW");
-  if (away) return down ? "awayDrop" : "awayRise";
-  return down ? "insideDrop" : "insideRise";
+  if (k==="E" || k==="W") return away ? "away" : "inside";
+  return away ? "awayDrop" : "insideDrop";
 }
 const REL_LBL = {
   none:"ストレート（曲がらない）", rise:"遅い球（奥行き）", drop:"縦に落ちる",
-  away:"横に逃げる", awayDrop:"逃げて落ちる", awayRise:"逃げて落ちない",
-  inside:"内に食い込む", insideDrop:"食い込んで落ちる", insideRise:"食い込んで落ちない"
+  away:"横に逃げる", awayDrop:"逃げて落ちる",
+  inside:"内に食い込む", insideDrop:"食い込んで落ちる"
 };
-const REL_ORDER = ["none","rise","away","awayDrop","awayRise","inside","insideDrop","insideRise","drop"];
+const REL_ORDER = ["none","rise","away","awayDrop","inside","insideDrop","drop"];
 // --- 球種の判定 ---------------------------------------------
 // 球種は「投手の利き腕」と「曲がった向き」で決まる。打者の左右は関係ない。
 // 画面は打者目線なので、図の右＝一塁側。
 // 右投手のグラブ側（スライダー）は一塁側へ、腕側（シュート）は三塁側へ曲がる。
 // 左投手はその逆になる。
 function pitchKind(brk, throws){
+  brk = normBrk(brk);
   if (brk === "straight") return "straight";
   if (brk === "N") return "change";               // 奥行きを使う遅い球
   if (brk === "S") return "drop";                 // 縦に落ちる
-  const toRight = (brk === "E" || brk === "NE" || brk === "SE");
+  const toRight = (brk === "E" || brk === "SE");
   const glove   = (throws === "L") ? !toRight : toRight;   // グラブ側か腕側か
   const down    = (brk === "SE" || brk === "SW");
-  const up      = (brk === "NE" || brk === "NW");
-  if (glove) return down ? "sliderDrop" : (up ? "cut" : "slider");
-  return        down ? "sinker"     : (up ? "twoseam" : "shoot");
+  if (glove) return down ? "sliderDrop" : "slider";   // カット系も横に含める
+  return        down ? "sinker"     : "shoot";        // ツーシーム系も横に含める
 }
 const KIND_LBL = {
   straight:  "ストレート",
   change:    "チェンジアップ・スローボール系",
   slider:    "スライダー系（横に滑る）",
   sliderDrop:"スライダー・カーブ系（滑って落ちる）",
-  cut:       "カット系（落ちずに横へ）",
   shoot:     "シュート・ツーシーム系（横に食い込む）",
   sinker:    "シンカー系（食い込んで落ちる）",
-  twoseam:   "ツーシーム系（落ちずに横へ）",
   drop:      "フォーク・カーブ系（縦に落ちる）"
 };
-const KIND_ORDER = ["straight","change","slider","sliderDrop","cut",
-                    "shoot","sinker","twoseam","drop"];
+const KIND_ORDER = ["straight","change","slider","sliderDrop",
+                    "shoot","sinker","drop"];
 // 曲がり方を、その打者から見た矢印に戻す
 const REL_ARROW_R = {none:"●", rise:"↑", drop:"↓", away:"→", inside:"←",
-  awayDrop:"↘", awayRise:"↗", insideDrop:"↙", insideRise:"↖"};
+  awayDrop:"↘", insideDrop:"↙"};
 const MIRROR = {"→":"←","←":"→","↘":"↙","↙":"↘","↗":"↖","↖":"↗"};
 function relArrow(rel, bats){
   const a = REL_ARROW_R[rel] || "";
@@ -764,12 +762,13 @@ function relArrow(rel, bats){
 }
 
 function breakAxis(k){
+  k = normBrk(k);
   if (k==="straight") return "none";
   if (k==="N"||k==="S") return "vert";
   if (k==="E"||k==="W") return "horiz";
   return "diag";
 }
-const AXIS_LBL = {none:"ストレート", vert:"縦", horiz:"横", diag:"斜め"};
+const AXIS_LBL = {none:"ストレート", vert:"縦", horiz:"横", diag:"斜め下"};
 
 function isAtBat(pa){
   if (pa.result==="walk" || pa.result==="hbp") return false;
@@ -1230,7 +1229,8 @@ function buildBreakGrid(){
   BREAKS.forEach(b=>{
     const el = document.createElement("button");
     el.type="button"; el.className="bcell"; el.setAttribute("aria-pressed","false");
-    el.dataset.k = b.k; el.textContent = b.arrow; g.appendChild(el);
+    el.dataset.k = b.k; el.textContent = b.arrow;
+    el.style.gridArea = `${b.r}/${b.c}`; g.appendChild(el);
   });
   g.addEventListener("click", e=>{
     const b = e.target.closest(".bcell"); if(!b) return;
@@ -1365,7 +1365,7 @@ function startEdit(id){
   Array.from($("#zoneGrid").children).forEach(c=>c.setAttribute("aria-pressed",
     String(c.dataset && +c.dataset.r===pa.row && +c.dataset.c===pa.col)));
   Array.from($("#breakGrid").children).forEach(c=>c.setAttribute("aria-pressed",
-    String(c.dataset.k===pa.brk)));
+    String(c.dataset.k===normBrk(pa.brk))));
   chipSet("#selJudge", pa.judge || "");
   chipSet("#selResult", pa.result || "");
   chipSet("#selOutSafe", pa.outSafe || "");
@@ -1402,7 +1402,7 @@ function paSummary(pa){
   const z = zone9(pa.row,pa.col);
   const where = `${H_LBL[heightBand(pa.row)]}${SIDE_LBL[inOut(pa.col,bats)]}` + (z!==null?`（${z}）`:"（ボールゾーン）");
   return {where, rel:breakRel(pa.brk,bats),
-    arrow:(BREAKS.find(b=>b.k===pa.brk)||{}).arrow || "",
+    arrow:(BREAKS.find(b=>b.k===normBrk(pa.brk))||{}).arrow || "",
     jd: pa.judge==="ball" ? "ボール球" : "ストライク"};
 }
 
