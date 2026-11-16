@@ -319,8 +319,8 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="btnrow ao"><button class="btn sec" id="btnNewPlayer" type="button">打者を追加（ログインなし）</button></div>
     <div id="newPlayerForm" style="display:none;margin-top:10px">
       <div class="row">
-        <div style="flex:2"><label class="fld" for="npName">選手名<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
-          <input type="text" id="npName" placeholder="例）山田 太郎"></div>
+        <div style="flex:2"><label class="fld" for="npName">選手名<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label>
+          <input type="text" id="npName" placeholder="例）山田 太郎（間にスペース）"></div>
         <div><label class="fld">打席</label>
           <div class="chips" id="npBats">
             <button class="chip" type="button" data-v="R" aria-pressed="true">右打ち</button>
@@ -331,6 +331,7 @@ body.adm nav.tabs button.ao{display:flex}
         <button class="btn" id="btnSavePlayer" type="button">登録</button>
         <button class="btn sec" id="btnCancelPlayer" type="button">やめる</button>
       </div>
+      <div class="note" id="npNote"></div>
     </div>
   </div>
 
@@ -452,7 +453,7 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card ao">
     <h2>自チームの投手<span class="hint">監督・コーチのみ</span></h2>
     <div class="row2">
-      <div><label class="fld" for="armName">名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label><input id="armName" placeholder="例）橋本 大輔"></div>
+      <div><label class="fld" for="armName">名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label><input id="armName" placeholder="例）橋本 大輔（間にスペース）"></div>
       <div><label class="fld">投げる手</label><div class="chips" id="armThrows">
         <button class="chip" type="button" data-v="R" aria-pressed="true">右投げ</button>
         <button class="chip" type="button" data-v="L" aria-pressed="false">左投げ</button>
@@ -766,8 +767,8 @@ body.adm nav.tabs button.ao{display:flex}
     <div id="userList"></div>
     <div class="btnrow"><button class="btn sec" id="btnAddUser" type="button">アカウントを追加</button></div>
     <div id="addUserForm" style="display:none;margin-top:12px">
-      <label class="fld" for="auName">① 名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
-      <input type="text" id="auName" placeholder="例）山田 太郎">
+      <label class="fld" for="auName">① 名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label>
+      <input type="text" id="auName" placeholder="例）山田 太郎（間にスペース）">
 
       <label class="fld" style="margin-top:13px">② 権限</label>
       <div class="chips" id="auRole">
@@ -855,8 +856,8 @@ body.adm nav.tabs button.ao{display:flex}
       はじめての設定です。<b>監督・コーチのアカウント</b>を作ります。<br>
       部員やほかのコーチは、このあとアプリの中から追加できます。
     </div>
-    <label class="fld" for="suName">お名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
-    <input type="text" id="suName" placeholder="例）後藤 貴明" autocomplete="off">
+    <label class="fld" for="suName">お名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label>
+    <input type="text" id="suName" placeholder="例）後藤 貴明（間にスペース）" autocomplete="off">
     <label class="fld" for="suId" style="margin-top:11px">ログインID<span style="font-weight:400;color:var(--muted)">（半角英数）</span></label>
     <input type="text" id="suId" placeholder="例）goto" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
     <label class="fld" for="suPw" style="margin-top:11px">パスワード<span style="font-weight:400;color:var(--muted)">（8文字以上）</span></label>
@@ -1180,6 +1181,9 @@ function redrawAll(){
 }
 
 /* ---- 権限 ---- */
+// 苗字と名前の間にスペースが要る（全角・半角どちらでもよい）
+const FULLNAME_MSG = "苗字と名前の間にスペースを入れて、フルネームで入力してください。（例）山田 太郎";
+function isFullName(v){ return /\S[\s\u3000]+\S/.test(String(v||"").trim()); }
 // 名前を比べるときはスペースを無視する（「橋本 大輔」と「橋本　大輔」を同じ人とみなす）
 function sameName(a,b){
   const k = x => String(x||"").replace(/[\s\u3000]/g,"");
@@ -1310,6 +1314,7 @@ $("#btnCancelPlayer").addEventListener("click", ()=>{ $("#newPlayerForm").style.
 $("#btnSavePlayer").addEventListener("click", async ()=>{
   const name = $("#npName").value.trim();
   if (!name){ $("#npName").focus(); return; }
+  if (!isFullName(name)){ note("npNote", FULLNAME_MSG); $("#npName").focus(); return; }
   const p = {id:uid(), name, bats: chipValue("#npBats") || "R"};
   try{
     await put("players", p);
@@ -2314,6 +2319,7 @@ $("#suGo").addEventListener("click", async ()=>{
   const pw   = $("#suPw").value;
   const pw2  = $("#suPw2").value;
   if (!name){ note("suNote","お名前を入力してください。"); return; }
+  if (!isFullName(name)){ note("suNote", FULLNAME_MSG); return; }
   if (!/^[A-Za-z0-9_.-]{3,32}$/.test(id)){ note("suNote","IDは半角英数字3〜32文字で入力してください。"); return; }
   if (pw.length < 8){ note("suNote","パスワードは8文字以上にしてください。"); return; }
   if (pw !== pw2){ note("suNote","パスワードが一致しません。"); return; }
@@ -2423,6 +2429,7 @@ $("#btnSaveUser").addEventListener("click", async ()=>{
     asPlayer: (role === "player") || also,
     bats: chipValue("#auBats") || "R"
   };
+  if (!isFullName(payload.name)){ note("auNote", FULLNAME_MSG); $("#auName").focus(); return; }
   $("#btnSaveUser").disabled = true;
   try{
     const d = await api("userAdd", payload);
@@ -2948,6 +2955,7 @@ $("#armThrows").addEventListener("click", e=>{
 $("#btnAddArm").addEventListener("click", async ()=>{
   const name = $("#armName").value.trim();
   if (!name){ note("armNote","名前を入れてください。"); return; }
+  if (!isFullName(name)){ note("armNote", FULLNAME_MSG); $("#armName").focus(); return; }
   if (name.length > 20){ note("armNote","名前が長すぎます。"); return; }
   const th = Array.from($("#armThrows").children).find(c=>c.getAttribute("aria-pressed")==="true");
   const a = {id:uid(), name, throws: th ? th.dataset.v : "R"};
