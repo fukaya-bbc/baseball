@@ -98,9 +98,9 @@ label.fld{display:block;font-size:12px;color:var(--text-secondary);margin:0 0 5p
 .row>*{flex:1;min-width:0}
 input[type=text],input[type=date],input[type=number],input:not([type]),select{width:100%;padding:10px;border:1px solid var(--axis);
   border-radius:10px;background:var(--surface-1);color:var(--text-primary);font-family:inherit;font-size:15px}
-button.btn{border:1px solid var(--border);background:var(--accent);color:#fff;border-radius:10px;
-  padding:11px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;width:100%}
-button.btn.sec{background:transparent;color:var(--text-primary);border-color:var(--axis)}
+button.btn,label.btn{border:1px solid var(--border);background:var(--accent);color:#fff;border-radius:10px;
+  padding:11px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;width:100%;box-sizing:border-box}
+button.btn.sec,label.btn.sec{background:transparent;color:var(--text-primary);border-color:var(--axis)}
 button.btn.dgr{background:transparent;color:var(--crit);border-color:var(--crit)}
 button.btn:disabled{opacity:.4;cursor:not-allowed}
 .btnrow{display:flex;gap:8px;margin-top:10px}
@@ -237,12 +237,16 @@ td .mk{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:
 .cur{font-size:13px;color:var(--text-secondary);margin-bottom:10px}
 .cur b{color:var(--text-primary);font-weight:650}
 .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:420px){ .filters.one{grid-template-columns:1fr} }
+.tbl td.nm,.tbl th.nm{white-space:nowrap}
+#btnFreeLineup{margin:8px 0 2px;padding:8px 10px;font-size:12px}
 @media(max-width:420px){.tiles{grid-template-columns:repeat(2,1fr)}}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ro .wo{display:none}
 body.mgr .mo{display:none}
 body.mgr .mlock{pointer-events:none;opacity:.5}
 body.mgr #cardPA{display:none}
+#cardPA.noself{display:none!important}
 body.mgr.editing #cardPA{display:block}
 body.mgr #btnSavePA{display:none}
 body.mgr.editing #btnSavePA{display:inline-flex}
@@ -316,6 +320,7 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card">
     <h2>選手</h2>
     <div class="row"><div><label class="fld" for="selPlayer">打者</label><select id="selPlayer"></select></div></div>
+    <div class="note" id="onlyMineNote" style="display:none"></div>
     <div class="btnrow ao"><button class="btn sec" id="btnNewPlayer" type="button">打者を追加（ログインなし）</button></div>
     <div id="newPlayerForm" style="display:none;margin-top:10px">
       <div class="row">
@@ -466,7 +471,7 @@ body.adm nav.tabs button.ao{display:flex}
 
   <div class="card">
     <h2>試合と投手</h2>
-    <div class="filters">
+    <div class="filters one">
       <div><label class="fld" for="selPGame">試合</label><select id="selPGame"></select></div>
       <div><label class="fld" for="selArm">投手</label><select id="selArm"></select></div>
       <div><label class="fld" for="selInning">回</label><select id="selInning"></select></div>
@@ -505,8 +510,7 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="cur" id="bfWho">—</div>
     <div class="row2">
       <div><label class="fld" for="selLineup">打順</label><select id="selLineup"></select>
-        <button class="btn sec" id="btnFreeLineup" type="button"
-          style="margin-top:6px;padding:6px 10px;font-size:12px">打順を自分で選ぶ</button></div>
+        <button class="btn sec" id="btnFreeLineup" type="button">打順を自分で選ぶ</button></div>
       <div><label class="fld" for="selBats">相手打者</label><select id="selBats"></select></div>
     </div>
     <div class="note" id="batsHint"></div>
@@ -733,7 +737,7 @@ body.adm nav.tabs button.ao{display:flex}
       <div class="filters" style="grid-template-columns:1fr">
         <div><label class="fld" for="fPRank">並び順</label><select id="fPRank"></select></div>
       </div>
-      <table class="tbl" id="tPRank"></table>
+      <div class="scrollx"><table class="tbl" id="tPRank"></table></div>
       <div class="note" id="prkNote"></div>
     </div>
   </div><!-- /statPitch -->
@@ -1083,6 +1087,11 @@ function rebuild(){
   _subCache = null;
 }
 const uid = () => Math.random().toString(36).slice(2,10);
+// 端末の時刻（日本時間）での今日の日付。toISOString は世界標準時なので朝9時まで前日になる。
+function todayLocal(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
 
 /* ---- サーバーとのやりとり ---- */
 const API_BASE = String((window.APP_CONFIG && window.APP_CONFIG.API) || "").replace(/\/+$/, "");
@@ -1124,17 +1133,13 @@ function queued(key, fn){
   WQ.set(key, next.catch(()=>{}));
   return next;
 }
+// 保存しても「どこまで読んだか」は進めない。進めると、その直前に他の人が保存した記録を
+// 読み飛ばしてしまう。読んだ位置は読み込み（load）の返事だけで進める。
 async function put(coll, obj){
-  return queued(coll + "/" + obj.id, async () => {
-    const d = await api("put", {coll, obj});
-    if (d.now) lastSync = Math.max(lastSync, d.now);
-  });
+  return queued(coll + "/" + obj.id, async () => { await api("put", {coll, obj}); });
 }
 async function drop(coll, id){
-  return queued(coll + "/" + id, async () => {
-    const d = await api("del", {coll, id});
-    if (d.now) lastSync = Math.max(lastSync, d.now);
-  });
+  return queued(coll + "/" + id, async () => { await api("del", {coll, id}); });
 }
 
 function banner(html){
@@ -1149,7 +1154,7 @@ function applyPayload(d){
   const recs = d.records || {};
   COLLS.forEach(c => (recs[c] || []).forEach(o => { if (o && o.id) CACHE[c][o.id] = o; }));
   (d.deleted || []).forEach(([c,id]) => { if (CACHE[c]) delete CACHE[c][id]; });
-  if (d.now) lastSync = Math.max(lastSync, d.now);
+  if (d.now) lastSync = d.full ? d.now : Math.max(lastSync, d.now);
   rebuild();
 }
 
@@ -1166,10 +1171,14 @@ async function syncNow(quiet){
   }
 }
 
+let visHooked = false;
 function startPolling(){
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(() => { if (!document.hidden) syncNow(true); }, 20000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(true); });
+  pollTimer = setInterval(() => { if (!document.hidden && ME) syncNow(true); }, 20000);
+  if (!visHooked){
+    visHooked = true;
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && ME) syncNow(true); });
+  }
 }
 
 function redrawAll(){
@@ -1222,8 +1231,8 @@ function applyRole(){
   sn.innerHTML = canAdmin
     ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
       + "・<b>監督・コーチ</b>：すべて操作できます<br>"
-      + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。打席の<b>結果だけ</b>直せます（コースや球種は直せません）。新しい記録や削除はできません<br>"
-      + "・<b>選手</b>：打席の記録と分析の閲覧。投球の分析は自分の分だけ見られます<br>"
+      + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。<b>投球データの記録・修正・削除</b>と試合の追加ができます。打席は<b>結果だけ</b>直せます（コースや球種は直せません。打席の新規記録や削除はできません）<br>"
+      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます<br>"
       + "・<b>閲覧のみ</b>：分析を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
@@ -1325,14 +1334,35 @@ $("#btnSavePlayer").addEventListener("click", async ()=>{
   }catch(e){ writeFailed(e); }
 });
 
+// 選手アカウントに結び付いている選手（打者）。結び付けが無いときは名前で照合する。
+function myPlayers(){
+  if (!ME) return [];
+  const linked = DB.players.filter(p => p.userId != null && String(p.userId) === String(ME.id));
+  return linked.length ? linked : DB.players.filter(p => p.userId == null && sameName(p.name, ME.name));
+}
+// 選手は自分の打席だけ記録・削除できる（マネージャー、監督・コーチは別）
+function onlyMine(){ return !!ME && ME.role === "player"; }
 function renderPlayers(){
   const sel = $("#selPlayer");
-  if (!DB.players.length){
-    sel.innerHTML = '<option value="">選手を追加してください</option>'; ST.playerId = null;
+  const list = onlyMine() ? myPlayers() : DB.players;
+  const noSelf = onlyMine() && !list.length;
+  const nm = $("#onlyMineNote");
+  if (nm){
+    nm.style.display = onlyMine() ? "" : "none";
+    nm.innerHTML = noSelf
+      ? "あなたの選手データが見つかりません。監督・コーチに、アカウントと打者一覧の名前が同じか確かめてもらってください。"
+      : "記録・削除できるのは自分の打席だけです。";
+  }
+  const card = $("#cardPA");
+  if (card) card.classList.toggle("noself", noSelf);
+  if (!list.length){
+    sel.innerHTML = noSelf ? '<option value="">（自分の選手データがありません）</option>'
+                           : '<option value="">選手を追加してください</option>';
+    ST.playerId = null;
   } else {
-    DB.players.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
-    if (!DB.players.some(p=>p.id===ST.playerId)) ST.playerId = DB.players[0].id;
-    sel.innerHTML = DB.players.map(p=>
+    list.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+    if (!list.some(p=>p.id===ST.playerId)) ST.playerId = list[0].id;
+    sel.innerHTML = list.map(p=>
       `<option value="${p.id}" ${p.id===ST.playerId?"selected":""}>${esc(p.name)}（${BATS[p.bats]}）</option>`).join("");
   }
   const p = curPlayer();
@@ -1372,14 +1402,14 @@ function renderPlayerList(){
    ============================================================ */
 $("#btnNewGame").addEventListener("click", ()=>{
   $("#newGameForm").style.display = "block";
-  $("#ngDate").value = new Date().toISOString().slice(0,10);
+  $("#ngDate").value = todayLocal();
   $("#ngOpp").value = ""; $("#ngOpp").focus();
 });
 $("#btnCancelGame").addEventListener("click", ()=>{ $("#newGameForm").style.display="none"; });
 $("#btnSaveGame").addEventListener("click", async ()=>{
   const opp = $("#ngOpp").value.trim();
   if (!opp){ $("#ngOpp").focus(); return; }
-  const g = {id:uid(), date: $("#ngDate").value || new Date().toISOString().slice(0,10), opponent:opp};
+  const g = {id:uid(), date: $("#ngDate").value || todayLocal(), opponent:opp};
   try{
     await put("games", g);
     CACHE.games[g.id] = g; rebuild();
@@ -1604,8 +1634,7 @@ function updatePANote(){
 async function writeFailed(e){
   if (e && e.status === 401){ showLogin("セッションが切れました。もう一度ログインしてください。"); return; }
   if (e && e.status === 403){
-    canWrite = false; applyRole();
-    await tell("この操作は、いまのアカウントの権限では行えません。");
+    await tell((e && e.message) || "この操作は、いまのアカウントの権限では行えません。");
     return;
   }
   await tell("保存できませんでした。\n" + ((e && e.message) || "") +
@@ -1995,7 +2024,7 @@ function csvText(){
   });
   return [head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
 }
-const stamp = () => new Date().toISOString().slice(0,10);
+const stamp = () => todayLocal();
 
 async function saveFile(filename, data, mime){
   try{
@@ -2009,9 +2038,12 @@ async function saveFile(filename, data, mime){
   }catch(e){ note("ioNote","書き出せませんでした。「CSVをコピー」をお使いください。"); }
 }
 $("#btnExportCsv").addEventListener("click", ()=> saveFile(`batting_${stamp()}.csv`, "﻿"+csvText(), "text/csv;charset=utf-8"));
-$("#btnExport").addEventListener("click", ()=> saveFile(`batting_${stamp()}.json`,
-  JSON.stringify({version:1, players:DB.players, games:DB.games, pitchers:DB.pitchers, pas:DB.pas}, null, 2),
-  "application/json"));
+$("#btnExport").addEventListener("click", ()=>{
+  // 打撃・投球のすべて。読み込み（JSONを読み込む）でそのまま戻せる形
+  const out = {version:2};
+  COLLS.forEach(c => out[c] = DB[c]);
+  saveFile(`teamdata_${stamp()}.json`, JSON.stringify(out, null, 2), "application/json");
+});
 $("#btnCopyCsv").addEventListener("click", async ()=>{
   try{ await navigator.clipboard.writeText(csvText()); note("ioNote","CSVをコピーしました。表計算ソフトに貼り付けられます。"); }
   catch(e){ note("ioNote","コピーできませんでした。"); }
@@ -2116,7 +2148,7 @@ $("#btnSample").addEventListener("click", async ()=>{
     // --- 相手の打順（左右） ---
     const olu = {}; const lineupBats = {};
     for (let p=1;p<=9;p++){ const v = rnd() < .38 ? "L" : "R"; olu[p]=v; lineupBats[p]=v; }
-    batch.push(["olu", Object.assign({id:uid(), gameId:g.id, bats:olu}, S)]);
+    batch.push(["olu", Object.assign({id:"olu_"+g.id, gameId:g.id, bats:olu}, S)]);
 
     // --- 自チームの打撃 ---
     const opps = [{throws:"R",arm:"over",velo:"fast"},{throws:"L",arm:"three",velo:"normal"}]
@@ -2242,6 +2274,9 @@ function loginErr(msg){
 function showLogin(msg){
   ME = null; canWrite = null; canAdmin = false; isManager = false; storeReady = false;
   setToken(null);
+  USERS = [];
+  COLLS.forEach(c => CACHE[c] = {}); rebuild(); lastSync = 0;
+  try{ setEditing(null); setEditingBF(null); }catch(e){}
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   document.body.classList.remove("adm");
   $("#menu").classList.remove("on");
@@ -2272,8 +2307,8 @@ function afterLogin(u){
 // ログイン中の人の打者記録があれば、最初からそれを選んでおく
 function pickMyPlayer(){
   if (!ME) return;
-  const mine = DB.players.find(p => p.userId != null && String(p.userId) === String(ME.id));
-  if (!mine) return;
+  const mine = myPlayers()[0];
+  if (!mine){ if (onlyMine()){ renderPlayers(); renderAll(); } return; }
   ST.playerId = mine.id; F.player = mine.id;
   renderPlayers(); renderAll();
 }
@@ -2370,7 +2405,7 @@ $("#mLogout").addEventListener("click", async ()=>{
 let USERS = [];
 async function loadUsers(){
   if (!canAdmin) return;
-  try{ const d = await api("users"); USERS = d.users || []; renderUsers(); }
+  try{ const d = await api("users"); USERS = d.users || []; renderUsers(); renderArms(); }
   catch(e){ /* 権限がなければ何もしない */ }
 }
 function renderUsers(){
@@ -2629,14 +2664,18 @@ function renderArms(){
   const accs = USERS.filter(u=>u.role==="player");
   host.innerHTML = DB.arms.length
     ? DB.arms.map(a=>{
-        const auto = a.userId==null && accs.some(u=>sameName(u.name, a.name));
+        const hit  = accs.find(u=>sameName(u.name, a.name));
+        const auto = a.userId==null && !!hit;
         return `<div class="pa"><div class="bd"><b>${esc(a.name)}</b>`
         + `<div class="s">${THROW_LBL[a.throws]||""}</div>`
         + `<label class="fld" style="margin-top:7px">この投手のアカウント`
-        + `<span class="hint" style="display:block;font-weight:400">本人だけが自分の投球分析を見られます</span></label>`
+        + `<span class="hint" style="display:block;font-weight:400">`
+        + `選んだ人だけが、自分の投球分析を見られます</span></label>`
         + `<select data-armuser="${a.id}">`
         + `<option value=""${a.userId==null?" selected":""}>`
-        + `${auto?"自動（名前が同じアカウント）":"結び付けない"}</option>`
+        + `${auto ? `自動：${esc(hit.name)}（名前が同じ）`
+                  : (accs.length ? "決めない（本人は見られません）"
+                                 : "選手のアカウントがありません")}</option>`
         + accs.map(u=>pOpt(u.id, u.name, a.userId==null?"":a.userId)).join("")
         + `</select></div>`
         + `<button class="del ao" data-delarm="${a.id}" type="button" aria-label="削除">✕</button></div>`;
@@ -2885,7 +2924,14 @@ function fillLineupSel(){
   const fb = $("#btnFreeLineup");
   if (fb) fb.style.display = lineupLocked() ? "inline-flex" : "none";
   const a = curArm();
-  $("#bfWho").innerHTML = `<b style="font-size:17px">${PST.inning}回　`
+  // 3アウトの回に戻ってきたときは「次の打者」を出さない（抜けた出塁の穴埋めだけ受け付ける）
+  const over = !PST.editId && PST.gameId && outsInInning(PST.gameId, PST.inning, null) >= 3;
+  $("#bfWho").innerHTML = over
+    ? `<b style="font-size:17px">${PST.inning}回は3アウトで終わっています</b>`
+      + (a ? `　／　投手 <b>${esc(a.name)}</b>` : "")
+      + `<div class="s" style="margin-top:3px;color:var(--muted)">次の回に進むときは、上の「回」を選んでください。`
+      + `記録し忘れた出塁（安打・四球など）を足すときだけ、ここから入れられます（${PST.lineup||"—"}番として入ります）。</div>`
+    : `<b style="font-size:17px">${PST.inning}回　`
     + (PST.lineup ? `${PST.lineup}番` : "打順なし")
     + (Number(PST.cyc||1) > 1 ? `（${PST.cyc}巡目）` : "") + `</b>`
     + (a ? `　／　投手 <b>${esc(a.name)}</b>` : "")
@@ -2931,14 +2977,14 @@ function renderPAll(){
 /* ---- 投球：操作 ---- */
 $("#btnNewPGame").addEventListener("click", ()=>{
   $("#newPGameForm").style.display = "block";
-  $("#npDate").value = new Date().toISOString().slice(0,10);
+  $("#npDate").value = todayLocal();
   $("#npOpp").value = ""; $("#npOpp").focus(); note("pGameNote","");
 });
 $("#btnCancelPGame").addEventListener("click", ()=>{ $("#newPGameForm").style.display="none"; });
 $("#btnSavePGame").addEventListener("click", async ()=>{
   const opp = $("#npOpp").value.trim();
   if (!opp){ note("pGameNote","相手校を入れてください。"); $("#npOpp").focus(); return; }
-  const g = {id:uid(), date: $("#npDate").value || new Date().toISOString().slice(0,10), opponent:opp};
+  const g = {id:uid(), date: $("#npDate").value || todayLocal(), opponent:opp};
   try{
     await put("games", g);
     CACHE.games[g.id] = g; rebuild();
@@ -2960,7 +3006,7 @@ $("#btnAddArm").addEventListener("click", async ()=>{
   const th = Array.from($("#armThrows").children).find(c=>c.getAttribute("aria-pressed")==="true");
   const a = {id:uid(), name, throws: th ? th.dataset.v : "R"};
   try{ await put("arms", a); CACHE.arms[a.id]=a; rebuild();
-       $("#armName").value=""; PST.armId = a.id; renderPAll();
+       $("#armName").value=""; if (!PST.armId) PST.armId = a.id; renderPAll();
        note("armNote", `${name} を登録しました。`); }
   catch(e){ writeFailed(e); }
 });
@@ -2984,7 +3030,8 @@ $("#selBats").addEventListener("change", e=>{ PST.bats = e.target.value||null; f
 $("#btnSaveOlu").addEventListener("click", async ()=>{
   if (!PST.gameId){ note("oluNote","先に試合を選んでください。"); return; }
   const bats = {}; Object.entries(oluDraft).forEach(([k,v])=>{ if(v) bats[k]=v; });
-  const rec = { id: "olu_"+PST.gameId, gameId: PST.gameId, bats };
+  const cur = oluOf(PST.gameId);              // 同じ試合の記録があればそれを上書き（二重にしない）
+  const rec = { ...(cur || {}), id: cur ? cur.id : "olu_"+PST.gameId, gameId: PST.gameId, bats };
   try{ await put("olu", rec); CACHE.olu[rec.id]=rec; rebuild(); renderPAll();
        note("oluNote", `相手の打順を保存しました（${Object.keys(bats).length}人分）。`); }
   catch(e){ writeFailed(e); }
@@ -3031,6 +3078,9 @@ $("#selInning").addEventListener("change", e=>{
 $("#btnSaveBF").addEventListener("click", async ()=>{
   if (!(PST.gameId && PST.armId && PST.first && PST.result)) return;
   const old = PST.editId ? DB.bf.find(x=>x.id===PST.editId) : null;
+  // 直している最中に別の端末で消されていたら、新しい記録として入れてしまわない
+  if (PST.editId && !old){ setEditingBF(null); clearBF(); renderPAll();
+    note("bfNote","直そうとした記録が見つかりませんでした（別の端末で消された可能性があります）。"); return; }
   if (!old && !PST.freeLineup){
     const exp = suggestNext(PST.gameId, PST.inning);
     if (PST.lineup && Number(PST.lineup) !== exp.lineup){
@@ -3170,8 +3220,8 @@ function pSplit(armId){
     return true;
   };
   return {
-    bfs:    DB.bf.filter(x=> x.armId===id && scope(x)),          // 結果はこの投手のもの
-    firsts: DB.bf.filter(x=> firstArmOf(x)===id && scope(x)),    // 初球はこの投手のもの
+    bfs:    DB.bf.filter(x=> !x.stub && x.armId===id && scope(x)),          // 結果はこの投手のもの
+    firsts: DB.bf.filter(x=> !x.stub && firstArmOf(x)===id && scope(x)),    // 初球はこの投手のもの
     inns:   DB.inn.filter(x=> x.armId===id && scope(x))
   };
 }
@@ -3193,13 +3243,20 @@ function pStatsOf(bfs, inns, firsts){
   const runs    = withR.reduce((t,x)=>t+x.runs,0);
   const tbRuns  = tbInn.reduce((t,x)=>t+x.runs,0);
   const ip = outs/3;
+  // 球数・失点で割るときは、その数字を入れた回のアウトだけを分母にする。
+  // 入れ忘れた回やタイブレークの回のアウトまで入れると、実際より良い数字になってしまう。
+  const outsOf = {};
+  bfs.forEach(x=>{ const k=x.gameId+"#"+x.inning; outsOf[k]=(outsOf[k]||0)+(BF_OUTS[x.result]||0); });
+  inns.forEach(x=>{ const k=x.gameId+"#"+x.inning; outsOf[k]=(outsOf[k]||0)+(x.extraOuts||0); });
+  const ipOf = list => list.reduce((t,x)=>t+(outsOf[x.gameId+"#"+x.inning]||0), 0) / 3;
+  const ipP = ipOf(withP), ipR = ipOf(withR);
   return { n,k,bb,hb,h,go,fo,er,sc,dp,ab,outs,pitches,runs,extra,ip,
     tbCount:tbInn.length, tbRuns,
     nf:fl.length, f1rate:fl.length?f1/fl.length:null, krate:n?k/n:null, bbrate:n?(bb+hb)/n:null,
     baa:ab?h/ab:null,
-    ppi: ip>0 && withP.length ? pitches/ip : null,            // 1イニング換算の球数
-    rpi: ip>0 && withR.length ? runs/ip : null,               // 1イニング換算の失点
-    rp9: ip>0 && withR.length ? runs*9/ip : null,             // 9回換算の失点率
+    ppi: ipP>0 ? pitches/ipP : null,          // 1イニング換算の球数（球数を入れた回だけ）
+    rpi: ipR>0 ? runs/ipR    : null,          // 1イニング換算の失点（失点を入れた回だけ・TB除く）
+    rp9: ipR>0 ? runs*9/ipR  : null,          // 9回換算の失点率
     gf : fo ? (go+dp)/fo : null };
 }
 // 回の先頭打者を切れたかどうかで分ける。
@@ -3387,11 +3444,11 @@ function renderPRank(){
     el.innerHTML = '<tbody><tr><td class="empty-note" colspan="7">該当なし</td></tr></tbody>';
     note("prkNote", `対戦打者${RANK_MIN_BF}人以上の投手がまだいません。`); return;
   }
-  el.innerHTML = '<thead><tr><th>順位</th><th>投手</th><th>初球</th><th>先頭を切る</th><th>失点率</th><th>四死球</th><th>被打率</th></tr></thead><tbody>'
+  el.innerHTML = '<thead><tr><th>順位</th><th class="nm">投手</th><th>初球</th><th>先頭を切る</th><th>失点率</th><th>四死球</th><th>被打率</th></tr></thead><tbody>'
     + top.map((r,i)=>{
         const me = r.a.id===PF.arm ? ' class="me"' : "";
         const hi = k => k===pRankKey ? ' style="font-weight:700"' : "";
-        return `<tr${me}><td>${i+1}</td><td class="lab">${esc(r.a.name)}</td>`
+        return `<tr${me}><td>${i+1}</td><td class="lab nm">${esc(r.a.name)}</td>`
           + `<td${hi("f1")}>${fmtPct(r.s.f1rate)}</td><td${hi("lead")}>${fmtPct(r.l.hold)}</td>`
           + `<td${hi("rp9")}>${r.s.rp9==null?"—":r.s.rp9.toFixed(2)}</td>`
           + `<td${hi("bb")}>${fmtPct(r.s.bbrate)}</td><td${hi("baa")}>${fmtAvg(r.s.baa)}</td></tr>`;
