@@ -2528,6 +2528,32 @@ function innBFs(gid,i){
   const rank = p => { const d = Number(p) - start; return d < 0 ? d + LINEUP_N : d; };
   return [...list].sort((a,b)=> rank(a.lineup) - rank(b.lineup) || (a.ts||0)-(b.ts||0));
 }
+function nextLineup(n){ return !n ? 1 : (Number(n) % LINEUP_N) + 1; }
+// 次に記録する打順。この回に記録があればその続き、無ければ前の回の続き。
+function suggestLineup(gid, i){
+  const here = innBFs(gid, i);
+  if (here.length) return nextLineup(Number(here[here.length-1].lineup || 0));
+  for (let k = Number(i) - 1; k >= 1; k--){
+    const prev = innBFs(gid, k);
+    if (prev.length) return nextLineup(Number(prev[prev.length-1].lineup || 0));
+  }
+  return 1;
+}
+// 球数の入力欄へ案内する
+function focusInnCard(){
+  const el = $("#innCtx"); if (!el) return;
+  el.scrollIntoView({behavior:"smooth", block:"center"});
+  setTimeout(()=>{ const f = $("#innPitches"); if (f && !f.value) f.focus(); }, 450);
+}
+// その投手の、その回の球数がまだ入っていないか
+function needsPitchCount(gid, i, armId){
+  if (!armId) return false;
+  if (!DB.bf.some(x=>x.gameId===gid && Number(x.inning)===Number(i) && x.armId===armId)) return false;
+  const r = innRec(gid, i, armId);
+  return !r || r.pitches == null;
+}
+let pendingArm = null;   // 球数を入れたあとに交代する投手
+
 function bfsOfCell(gid,i,lineup){
   return DB.bf.filter(x=>x.gameId===gid && Number(x.inning)===Number(i)
                       && Number(x.lineup||0)===Number(lineup))
@@ -2772,12 +2798,12 @@ function clearBF(){
   PST.first=null; PST.result=null;
   chipSet("#selFirst",""); chipSet("#selBFResult",""); fillLineupSel(); updateBFNote();
 }
-function startNewBF(lineup){
+function startNewBF(lineup, scroll){
   setEditingBF(null);
   PST.lineup = lineup || null; PST.first=null; PST.result=null; PST.firstArmId=null; PST.bats=null;
   chipSet("#selFirst",""); chipSet("#selBFResult","");
   fillLineupSel(); fillBatsSel(); fillRelief(); updateBFNote(); note("bfNote","");
-  $("#bfTitle").scrollIntoView({behavior:"smooth", block:"start"});
+  if (scroll !== false) $("#bfTitle").scrollIntoView({behavior:"smooth", block:"start"});
 }
 function setEditingBF(id){
   PST.editId = id || null;
@@ -2868,10 +2894,33 @@ $("#selBFResult").addEventListener("click", e=>{
 $("#btnCancelBF").addEventListener("click", ()=>{ setEditingBF(null); clearBF(); });
 $("#btnClearBF").addEventListener("click",  ()=>{ setEditingBF(null); clearBF(); });
 $("#selPGame").addEventListener("change", e=>{
-  setEditingBF(null); clearBF(); PST.gameId = e.target.value||null; renderPAll(); });
-$("#selArm").addEventListener("change", e=>{ PST.armId = e.target.value||null; renderPSelectors(); updateBFNote(); });
+  setEditingBF(null); clearBF(); pendingArm = null;
+  PST.gameId = e.target.value||null;
+  PST.lineup = suggestLineup(PST.gameId, PST.inning);
+  renderPAll();
+});
+$("#selArm").addEventListener("change", e=>{
+  const next = e.target.value || null, prev = PST.armId;
+  if (prev && next && prev !== next && needsPitchCount(PST.gameId, PST.inning, prev)){
+    const pn = (DB.arms.find(a=>a.id===prev)||{}).name || "前の投手";
+    const nn = (DB.arms.find(a=>a.id===next)||{}).name || "次の投手";
+    pendingArm = next;
+    e.target.value = prev;                       // 球数を入れるまで、いったん戻す
+    note("innNote", `交代の前に、${pn} が${PST.inning}回に投げた球数を入れてください。`
+      + `「この回を保存」を押すと ${nn} に切り替わります。`);
+    focusInnCard();
+    return;
+  }
+  pendingArm = null;
+  PST.armId = next; renderPSelectors(); updateBFNote();
+});
 $("#selInning").addEventListener("change", e=>{
-  setEditingBF(null); clearBF(); PST.inning = Number(e.target.value)||1; renderPAll(); });
+  setEditingBF(null); clearBF(); pendingArm = null;
+  PST.inning = Number(e.target.value)||1;
+  PST.lineup = suggestLineup(PST.gameId, PST.inning);
+  renderPAll();
+  note("bfNote", `${PST.inning}回です。${PST.lineup}番から記録してください。`);
+});
 
 $("#btnSaveBF").addEventListener("click", async ()=>{
   if (!(PST.gameId && PST.armId && PST.first && PST.result)) return;
@@ -2897,7 +2946,15 @@ $("#btnSaveBF").addEventListener("click", async ()=>{
     await put("bf", rec); CACHE.bf[rec.id]=rec; rebuild();
     const wasEdit = !!old;
     setEditingBF(null); clearBF(); renderPAll();
-    note("bfNote", wasEdit ? "修正しました。" : "記録しました。");
+    if (wasEdit){
+      note("bfNote", "修正しました。");
+    } else if (outsInInning(PST.gameId, PST.inning, null) >= 3){
+      note("bfNote", `3アウトです。この回の球数を入れてください。`);
+      focusInnCard();
+    } else {
+      startNewBF(suggestLineup(PST.gameId, PST.inning), false);
+      note("bfNote", `記録しました。次は ${PST.lineup}番 です。`);
+    }
     if ($("#p-stats").classList.contains("on")) renderStatsAll();
   }catch(e){ writeFailed(e); }
 });
@@ -2949,10 +3006,27 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
     runs:      num($("#innRuns").value.trim(), 30),
     extraOuts: xo,
     tb:        innTb || false };
-  try{ await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild(); renderPAll();
-       note("innNote", `${PST.inning}回（${(curArm()||{}).name||""}）を保存しました。`);
-       if ($("#p-stats").classList.contains("on")) renderStatsAll(); }
-  catch(e){ writeFailed(e); }
+  try{
+    await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild();
+    const savedInning = PST.inning, savedName = (curArm()||{}).name || "";
+    if (pendingArm){                                   // 交代の続き
+      const nn = (DB.arms.find(a=>a.id===pendingArm)||{}).name || "";
+      PST.armId = pendingArm; pendingArm = null;
+      renderPAll();
+      note("innNote", `${savedName} の球数を保存しました。${nn} に交代しました。`);
+      startNewBF(suggestLineup(PST.gameId, PST.inning), false);
+    } else if (!old && outsInInning(PST.gameId, PST.inning, null) >= 3){
+      PST.inning = Math.min(20, savedInning + 1);      // 3アウトなら次の回へ
+      PST.lineup = suggestLineup(PST.gameId, PST.inning);
+      renderPAll(); clearBF();
+      note("innNote", `${savedInning}回を保存しました。${PST.inning}回に進みました。`);
+      note("bfNote", `${PST.inning}回です。${PST.lineup}番から記録してください。`);
+    } else {
+      renderPAll();
+      note("innNote", `${savedInning}回（${savedName}）を保存しました。`);
+    }
+    if ($("#p-stats").classList.contains("on")) renderStatsAll();
+  }catch(e){ writeFailed(e); }
 });
 
 /* ============================================================
