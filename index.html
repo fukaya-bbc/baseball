@@ -463,6 +463,19 @@ body.adm nav.tabs button.ao{display:flex}
       <div><label class="fld" for="selArm">投手</label><select id="selArm"></select></div>
       <div><label class="fld" for="selInning">回</label><select id="selInning"></select></div>
     </div>
+    <div class="btnrow wo"><button class="btn sec" id="btnNewPGame" type="button">試合を追加</button></div>
+    <div id="newPGameForm" style="display:none;margin-top:10px">
+      <div class="row">
+        <div><label class="fld" for="npDate">日付</label><input type="date" id="npDate"></div>
+        <div style="flex:2"><label class="fld" for="npOpp">相手校</label>
+          <input type="text" id="npOpp" placeholder="例）県立一高"></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="btnSavePGame" type="button">登録</button>
+        <button class="btn sec" id="btnCancelPGame" type="button">やめる</button>
+      </div>
+    </div>
+    <div class="note" id="pGameNote"></div>
     <div class="cur" id="pCtx">—</div>
   </div>
 
@@ -1151,6 +1164,7 @@ function startPolling(){
 
 function redrawAll(){
   renderPlayers(); renderGames(); renderPitchers(); renderGamePAs();
+  renderPAll();
   updateZoneLabels(); updatePANote(); renderPlayerList();
   if (document.getElementById("p-stats").classList.contains("on")) renderStatsAll();
 }
@@ -2788,6 +2802,25 @@ function renderPAll(){
 }
 
 /* ---- 投球：操作 ---- */
+$("#btnNewPGame").addEventListener("click", ()=>{
+  $("#newPGameForm").style.display = "block";
+  $("#npDate").value = new Date().toISOString().slice(0,10);
+  $("#npOpp").value = ""; $("#npOpp").focus(); note("pGameNote","");
+});
+$("#btnCancelPGame").addEventListener("click", ()=>{ $("#newPGameForm").style.display="none"; });
+$("#btnSavePGame").addEventListener("click", async ()=>{
+  const opp = $("#npOpp").value.trim();
+  if (!opp){ note("pGameNote","相手校を入れてください。"); $("#npOpp").focus(); return; }
+  const g = {id:uid(), date: $("#npDate").value || new Date().toISOString().slice(0,10), opponent:opp};
+  try{
+    await put("games", g);
+    CACHE.games[g.id] = g; rebuild();
+    PST.gameId = g.id; setEditingBF(null); clearBF();
+    $("#newPGameForm").style.display = "none";
+    renderGames(); renderPAll();
+    note("pGameNote", `${g.date}　${opp} を登録しました。`);
+  }catch(e){ writeFailed(e); }
+});
 $("#armThrows").addEventListener("click", e=>{
   const c = e.target.closest(".chip"); if(!c) return;
   Array.from($("#armThrows").children).forEach(x=>x.setAttribute("aria-pressed", String(x===c)));
