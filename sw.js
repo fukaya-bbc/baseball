@@ -1,5 +1,5 @@
 // チームデータ分析 ― オフライン対応とホーム画面インストール用
-const VERSION = 'bb-v26';
+const VERSION = 'bb-v28';
 const SHELL = ['./index.html','./manifest.json','./logo.png','./icon-192.png','./icon-512.png','./field.jpg','./field-l.jpg'];
 
 self.addEventListener('install', e => {

@@ -138,7 +138,7 @@ button.btn:disabled{opacity:.4;cursor:not-allowed}
   max-width:none;margin:0;aspect-ratio:auto;padding:3px;
   box-shadow:0 0 0 2px rgba(255,255,255,.85),0 10px 26px rgba(0,0,0,.5)}
 .scene.lh .grid5,.scene.lh .hm{left:3%}
-.sb{border-collapse:separate;border-spacing:3px;width:100%}
+.sb{border-collapse:separate;border-spacing:3px;width:max-content;min-width:100%}
 .sb th{font-size:11px;color:var(--muted);font-weight:600;padding:2px;white-space:nowrap}
 .sb td{padding:0}
 .sb .cell{width:100%;min-width:46px;height:46px;border:1px solid var(--axis);border-radius:8px;
@@ -148,9 +148,12 @@ button.btn:disabled{opacity:.4;cursor:not-allowed}
 .sb .cell.on{background:#0075C6;border-color:#0075C6;color:#fff}
 .sb .cell.empty{color:var(--muted);font-weight:400;background:transparent;border-style:dashed}
 .sb .cell .sub{font-size:9px;font-weight:400;opacity:.8}
-.sb .cell.more{margin-top:2px;height:32px;font-size:11px;box-shadow:inset 0 2px 0 rgba(0,117,198,.35)}
-.sb .cell.more .sub{font-size:8px}
-.sb .lin{font-size:12px;color:var(--muted);text-align:center;white-space:nowrap}
+.sb .lin{font-size:12px;color:var(--muted);text-align:center;white-space:nowrap;
+  position:sticky;left:0;z-index:3;background:var(--surface-1);min-width:22px;
+  box-shadow:3px 0 0 var(--surface-1)}
+.sb th .s{font-size:9px;color:var(--accent);font-weight:700;margin-top:1px}
+.sb th.c2{color:var(--accent)}
+.sb .cell.dim{opacity:.45}
 .lrow{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;
   padding:9px 11px;margin-bottom:7px;background:var(--card);cursor:pointer}
 .lrow .no{width:34px;flex:0 0 34px;text-align:center;font-weight:700;color:var(--muted);font-size:13px}
@@ -2707,22 +2710,33 @@ function renderSbGrid(){
   const el = $("#sbGrid"); if(!el) return;
   const used = [...new Set(DB.bf.filter(x=>x.gameId===PST.gameId).map(x=>Number(x.inning)))];
   const maxI = Math.max(7, PST.inning, ...(used.length?used:[0]));
-  const cols = Array.from({length:Math.min(maxI+1,20)},(_,i)=>i+1);
-  let head = '<thead><tr><th></th>' + cols.map(i=>`<th>${i}回</th>`).join("") + '</tr></thead>';
+  const inns = Array.from({length:Math.min(maxI+1,20)},(_,i)=>i+1);
+  // 回ごとに何巡したかを数える。一巡した回は、その右に「2巡」の列を増やす。
+  const at = {}, maxC = {};
+  inns.forEach(i => innSeq(PST.gameId, i).forEach(sq=>{
+    const p = Number(sq.bf.lineup || 0); if (!p) return;
+    let c = sq.cyc;
+    while (at[`${i}:${c}:${p}`]) c++;          // 同じマスが埋まっていたら次の列へ
+    at[`${i}:${c}:${p}`] = sq.bf;
+    maxC[i] = Math.max(maxC[i] || 1, c);
+  }));
+  const cols = [];
+  inns.forEach(i=>{ for (let c=1; c<=(maxC[i]||1); c++) cols.push({i,c}); });
+  let head = '<thead><tr><th class="lin"></th>'
+    + cols.map(({i,c})=>`<th${c>1?' class="c2"':''}>${i}回`
+        + (c>1 ? `<div class="s">${c}巡</div>` : "") + `</th>`).join("")
+    + '</tr></thead>';
   let body = '<tbody>';
   for (let p=1; p<=LINEUP_N; p++){
     body += `<tr><th class="lin">${p}</th>`;
-    cols.forEach(i=>{
-      const cs = bfsOfCell(PST.gameId, i, p);
+    cols.forEach(({i,c})=>{
+      const x = at[`${i}:${c}:${p}`];
       const here = (i===PST.inning);
-      if (!cs.length){
-        body += `<td><div class="cell empty${here?" on":""}" data-go="${i}:${p}">・</div></td>`;
-      } else {
-        body += `<td>` + cs.map((x,k)=>
-            `<div class="cell${here?" on":""}${k?" more":""}" data-go="${i}:${p}" data-bf="${x.id}">`
+      body += x
+        ? `<td><div class="cell${here?" on":""}" data-go="${i}:${p}" data-bf="${x.id}">`
           + `${esc(BF_ABBR[x.result]||"")}`
-          + `<span class="sub">${x.first==="strike"?"初球S":"初球B"}</span></div>`).join("") + `</td>`;
-      }
+          + `<span class="sub">${x.first==="strike"?"初球S":"初球B"}</span></div></td>`
+        : `<td><div class="cell empty${here?" on":""}${c>1?" dim":""}" data-go="${i}:${p}">・</div></td>`;
     });
     body += '</tr>';
   }
