@@ -111,6 +111,21 @@ button.btn:disabled{opacity:.4;cursor:not-allowed}
   padding:11px 15px;font-size:13.5px;font-family:inherit;cursor:pointer;font-weight:550;
   white-space:nowrap;min-height:44px}
 .chip[aria-pressed="true"]{background:var(--chip-on);border-color:var(--chip-on);color:#fff}
+/* 補足のまとまり・誤入力の表示 */
+.ngrp{margin-top:8px}
+.ngl{font-size:11.5px;color:var(--muted);font-weight:650;margin:2px 0 5px}
+.chip.bad{border-color:var(--crit);box-shadow:0 0 0 2px rgba(208,59,59,.28)}
+.chip.bad[aria-pressed="true"]{background:var(--crit);border-color:var(--crit)}
+.warnbox{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.6;
+  background:rgba(208,59,59,.08);border:1px solid rgba(208,59,59,.45);color:var(--crit)}
+.warnbox b{display:block;margin-bottom:2px}
+.xstat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xstat .box{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--neutral)}
+.xstat .k{font-size:11.5px;color:var(--muted);font-weight:650}
+.xstat .v{font-size:20px;font-weight:700;margin-top:2px}
+.xstat .s{font-size:11.5px;color:var(--text-secondary);margin-top:2px}
+table.dc td,table.dc th{text-align:center;white-space:nowrap}
+table.dc td .s{font-size:11px;color:var(--muted);display:block}
 
 .zonewrap{display:flex;flex-direction:column;align-items:center;gap:6px}
 .zonetop,.zonebot{font-size:11.5px;color:var(--muted);font-weight:650}
@@ -435,10 +450,21 @@ body.adm nav.tabs button.ao{display:flex}
       </div>
     </div>
 
-    <div style="margin-top:14px">
-      <label class="fld">⑥ 補足<span style="font-weight:400;color:var(--muted)">（任意・複数可）</span></label>
-      <div class="chips" id="selNotes"></div>
+    <div style="margin-top:14px" id="dirWrap">
+      <label class="fld">⑥ 打球方向<span style="font-weight:400;color:var(--muted)">（打球が飛んだときは入れてください）</span></label>
+      <div class="chips" id="selDir"></div>
     </div>
+
+    <div style="margin-top:14px">
+      <label class="fld">⑦ 補足<span style="font-weight:400;color:var(--muted)">（任意・複数可）</span></label>
+      <div id="selNotes"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="fld">⑧ 場面<span style="font-weight:400;color:var(--muted)">（当てはまるときだけ）</span></label>
+      <div class="chips" id="selScene"></div>
+    </div>
+    <div class="warnbox" id="noteWarn" style="display:none"></div>
 
     <div class="btnrow">
       <button class="btn" id="btnSavePA" type="button">この打席を記録</button>
@@ -671,6 +697,20 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card"><h2>投手タイプ別</h2><div class="scrollx"><table id="tPitcher"></table></div></div>
   <div class="card"><h2>打球の質</h2><div class="scrollx"><table id="tQuality"></table></div>
     <div class="note">打率だけでなく打球の内容を見ます。強い打球が多いのに打率が低いコースは、運に恵まれていないだけかもしれません。</div></div>
+
+  <div class="card"><h2>打球方向<span class="hint">引っ張り・センター・流し</span></h2>
+    <div class="scrollx"><table id="tDir"></table></div>
+    <div class="ngl" style="margin-top:12px">コースごとの打球方向<span style="font-weight:400">（本数・打率）</span></div>
+    <div class="scrollx"><table class="dc" id="tDirCourse"></table></div>
+    <div class="note" id="dirNote"></div></div>
+
+  <div class="card"><h2>場面別<span class="hint">得点圏・追い込まれてから</span></h2>
+    <div class="scrollx"><table id="tScene"></table></div>
+    <div class="note" id="sceneNote"></div></div>
+
+  <div class="card"><h2>内野安打とバント</h2>
+    <div class="xstat" id="xStats"></div>
+    <div class="note" id="xNote"></div></div>
   </div><!-- /statBat -->
 
   <div id="statPitch" style="display:none">
@@ -928,19 +968,80 @@ const RESULTS = [
 ];
 const RMAP = Object.fromEntries(RESULTS.map(r=>[r.k,r]));
 
+// 補足（記録では pa.notes に入る）。g はまとまり。
+// ※infieldHit は昔から「強襲ヒット」の意味で使っている。足で稼いだ内野安打は beatOut。
 const NOTES = [
-  {k:"single",label:"シングルヒット"}, {k:"double",label:"ツーベース"},
-  {k:"triple",label:"スリーベース"},   {k:"homerun",label:"ホームラン"},
-  {k:"cleanHit",label:"クリーンヒット"}, {k:"infieldHit",label:"強襲ヒット"},
-  {k:"timely",label:"タイムリー"},
-  {k:"advance",label:"進塁打"}, {k:"tagUpRBI",label:"タッチアップで得点"},
-  {k:"sacBunt",label:"送りバント"}, {k:"safetyBunt",label:"セーフティバント"},
-  {k:"sacFly",label:"犠飛"}, {k:"onError",label:"エラーで出塁"},
-  {k:"fieldersChoice",label:"野選"}
+  {k:"single",label:"シングルヒット",g:"base"}, {k:"double",label:"ツーベース",g:"base"},
+  {k:"triple",label:"スリーベース",g:"base"},   {k:"homerun",label:"ホームラン",g:"base"},
+  {k:"cleanHit",label:"クリーンヒット",g:"kind"}, {k:"infieldHit",label:"強襲ヒット",g:"kind"},
+  {k:"beatOut",label:"内野安打",g:"kind"},       {k:"timely",label:"タイムリー",g:"kind"},
+  {k:"sacBunt",label:"送りバント",g:"bunt"},     {k:"buntFail",label:"バント失敗",g:"bunt"},
+  {k:"safetyBunt",label:"セーフティバント",g:"bunt"},
+  {k:"sacFly",label:"犠飛",g:"bunt"},            {k:"tagUpRBI",label:"タッチアップで得点",g:"bunt"},
+  {k:"advance",label:"進塁打",g:"bunt"},
+  {k:"onError",label:"エラーで出塁",g:"reach"}, {k:"fieldersChoice",label:"野選",g:"reach"}
 ];
-const NMAP = Object.fromEntries(NOTES.map(n=>[n.k,n.label]));
+const NGROUP = [["base","ヒットの種類（どれか1つ）"],["kind","ヒットの中身"],
+                ["bunt","バント・犠打・進塁"],["reach","ヒット以外で出塁"]];
+// 打球方向（打者から見て）。記録では notes に入れる
+const DIRS = [{k:"dirPull",label:"引っ張り"},{k:"dirCenter",label:"センター"},{k:"dirOppo",label:"流し"}];
+const DIR_KEYS = DIRS.map(d=>d.k);
+// 場面（当てはまるときだけ）。記録では notes に入れる
+const SCENES = [{k:"risp",label:"得点圏（ランナー2・3塁）",short:"得点圏"},
+                {k:"twoStrike",label:"追い込まれてから（2ストライク）",short:"2ストライク後"}];
+const SCENE_KEYS = SCENES.map(x=>x.k);
+const NMAP = Object.fromEntries([...NOTES, ...DIRS, ...SCENES.map(x=>({k:x.k,label:x.short}))].map(n=>[n.k,n.label]));
+// 打者の左右に合わせて、どちらのフィールドかも添える（右打者の引っ張り＝レフト）
+function dirLabel(k, bats){
+  if (k === "dirCenter") return "センター";
+  const toLeft = (k === "dirPull") === (bats !== "L");
+  return (k === "dirPull" ? "引っ張り" : "流し") + `（${toLeft ? "レフト" : "ライト"}）`;
+}
+function dirOf(pa){ return DIR_KEYS.find(k => (pa.notes||[]).includes(k)) || null; }
 // この補足が付いていれば安打として数える
-const HIT_NOTES = ["single","double","triple","homerun","cleanHit","infieldHit","timely"];
+const HIT_NOTES = ["single","double","triple","homerun","cleanHit","infieldHit","beatOut","timely"];
+
+/* ---- 同時に起きない組み合わせ（誤入力） ---- */
+const EXCL_GROUPS = [
+  ["single","double","triple","homerun"],      // ヒットの種類
+  ["cleanHit","infieldHit","beatOut"],         // ヒットの中身
+  ["sacBunt","buntFail","safetyBunt"],         // バント
+  ["sacBunt","sacFly"],                        // 犠打と犠飛
+  ["onError","fieldersChoice"],                // ヒット以外の出塁
+  ["dirPull","dirCenter","dirOppo"]            // 打球方向
+];
+const BAD_PAIRS = [                            // 内野安打・強襲・バントで長打にはならない
+  ["beatOut","double"],["beatOut","triple"],["beatOut","homerun"],
+  ["infieldHit","triple"],["infieldHit","homerun"],
+  ["safetyBunt","double"],["safetyBunt","triple"],["safetyBunt","homerun"]
+];
+const NOT_HIT = ["advance","sacBunt","buntFail","sacFly","tagUpRBI","onError","fieldersChoice"];
+// 誤入力の一覧（msgs）と、赤くするボタン（bad）を返す
+function noteProblems(result, outSafe, notes){
+  const N = new Set(notes || []), L = k => NMAP[k], msgs = [], bad = new Set();
+  const flag = (keys, msg) => { keys.forEach(k=>bad.add(k)); if (!msgs.includes(msg)) msgs.push(msg); };
+  const q = list => list.map(k=>`「${L(k)}」`).join("と");
+  EXCL_GROUPS.forEach(g => { const on = g.filter(k=>N.has(k));
+    if (on.length > 1) flag(on, `${q(on)}は同時に入りません。どれか1つにしてください。`); });
+  BAD_PAIRS.forEach(([a,b]) => { if (N.has(a) && N.has(b)) flag([a,b], `${q([a,b])}は同時に入りません。`); });
+  const hits = HIT_NOTES.filter(k=>N.has(k)), nots = NOT_HIT.filter(k=>N.has(k));
+  if (hits.length && nots.length) flag([...hits, ...nots], `ヒット（${hits.map(L).join("・")}）と${q(nots)}は同時に入りません。`);
+  const r = RMAP[result];
+  if (r && !r.batted){
+    const wrong = [...N].filter(k => !SCENE_KEYS.includes(k));
+    if (wrong.length) flag(wrong, `「${r.label}」のときに${q(wrong)}は入りません。`);
+  }
+  if (r && r.batted && outSafe === "out"){
+    if (hits.length) flag(hits, `アウトなのに、ヒット（${hits.map(L).join("・")}）が入っています。`);
+    const reach = ["onError","fieldersChoice"].filter(k=>N.has(k));
+    if (reach.length) flag(reach, `アウトなのに${q(reach)}が入っています。`);
+  }
+  if (r && r.batted && outSafe === "safe"){
+    const outs = ["sacFly","tagUpRBI","advance"].filter(k=>N.has(k));
+    if (outs.length) flag(outs, `セーフなのに${q(outs)}が入っています（どれも打者はアウトになる記録です）。`);
+  }
+  return { msgs, bad };
+}
 // 塁打数（長打率の計算に使う）
 function totalBases(pa){
   if (!isHit(pa)) return 0;
@@ -1581,25 +1682,55 @@ function buildResults(){
     ST.result = b.dataset.v;
     const batted = RMAP[ST.result].batted;
     $("#outSafeWrap").style.display = batted ? "block" : "none";
+    $("#dirWrap").style.display = batted ? "block" : "none";
     if (!batted){
       ST.outSafe = (ST.result==="walk"||ST.result==="hbp") ? null : "out";
       chipSet("#selOutSafe","");
+      DIR_KEYS.forEach(k=>ST.notes.delete(k));      // 打球が無いので方向は外す（隠れたまま残さない）
     }
     updatePANote();
   });
-  const n = $("#selNotes");
-  n.innerHTML = NOTES.map(x=>`<button class="chip" type="button" data-v="${x.k}" aria-pressed="false">${x.label}</button>`).join("");
-  n.addEventListener("click", e=>{
+  // ⑥ 打球方向（どれか1つ。もう一度押すと外れる）
+  $("#selDir").innerHTML = DIRS.map(x=>`<button class="chip" type="button" data-v="${x.k}" aria-pressed="false">${x.label}</button>`).join("");
+  $("#selDir").addEventListener("click", e=>{
     const b = e.target.closest(".chip"); if(!b) return;
-    const on = b.getAttribute("aria-pressed")==="true";
-    b.setAttribute("aria-pressed", String(!on));
-    if (on) ST.notes.delete(b.dataset.v); else ST.notes.add(b.dataset.v);
-    // 安打を表す補足を選んだら、アウト/セーフは自動でセーフに
-    if (!on && HIT_NOTES.includes(b.dataset.v) && ST.result && RMAP[ST.result].batted){
+    const was = ST.notes.has(b.dataset.v);
+    DIR_KEYS.forEach(k=>ST.notes.delete(k));
+    if (!was) ST.notes.add(b.dataset.v);
+    updatePANote();
+  });
+  // ⑦ 補足（まとまりごとに並べる）
+  $("#selNotes").innerHTML = NGROUP.map(([g,lbl])=>
+    `<div class="ngrp"><div class="ngl">${lbl}</div><div class="chips">`
+    + NOTES.filter(x=>x.g===g).map(x=>`<button class="chip" type="button" data-v="${x.k}" aria-pressed="false">${x.label}</button>`).join("")
+    + `</div></div>`).join("");
+  $("#selNotes").addEventListener("click", e=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    const v = b.dataset.v, on = ST.notes.has(v);
+    if (on) ST.notes.delete(v); else ST.notes.add(v);
+    // 安打や出塁を表す補足を選んだら、アウト/セーフは自動でセーフに
+    if (!on && (HIT_NOTES.includes(v) || v==="onError" || v==="fieldersChoice") && ST.result && RMAP[ST.result].batted){
       ST.outSafe = "safe"; chipSet("#selOutSafe","safe");
     }
     updatePANote();
   });
+  // ⑧ 場面
+  $("#selScene").innerHTML = SCENES.map(x=>`<button class="chip" type="button" data-v="${x.k}" aria-pressed="false">${x.label}</button>`).join("");
+  $("#selScene").addEventListener("click", e=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    if (ST.notes.has(b.dataset.v)) ST.notes.delete(b.dataset.v); else ST.notes.add(b.dataset.v);
+    updatePANote();
+  });
+}
+// 補足・方向・場面のボタンを、いまの入力に合わせて塗り直す（誤入力は赤く）
+function paintNotes(bad){
+  const p = curPlayer(), bats = p ? p.bats : "R";
+  $("#selDir").querySelectorAll(".chip").forEach(c=>{ c.textContent = dirLabel(c.dataset.v, bats); });
+  ["#selDir","#selNotes","#selScene"].forEach(sel=>
+    $(sel).querySelectorAll(".chip").forEach(c=>{
+      c.setAttribute("aria-pressed", String(ST.notes.has(c.dataset.v)));
+      c.classList.toggle("bad", !!(bad && bad.has(c.dataset.v)));
+    }));
 }
 chipGroup("#selJudge", v=>{ ST.judge=v; updatePANote(); });
 chipGroup("#selOutSafe", v=>{ ST.outSafe=v; updatePANote(); });
@@ -1614,6 +1745,19 @@ function updatePANote(){
   $("#paCtx").innerHTML = (p&&g&&pi)
     ? `<b>${esc(p.name)}</b> が <b>${esc(g.opponent)}</b> の <b>${esc(pitcherName(pi))}</b> と対戦`
     : "選手・試合・投手をそろえてください";
+
+  // 同時に起きない組み合わせ（誤入力）を先に調べる
+  const prob = noteProblems(ST.result, ST.outSafe, [...ST.notes]);
+  paintNotes(prob.bad);
+  const w = $("#noteWarn");
+  w.style.display = prob.msgs.length ? "block" : "none";
+  w.innerHTML = prob.msgs.length
+    ? "<b>誤入力があります（このままでは記録できません）</b>" + prob.msgs.map(m=>"・"+esc(m)).join("<br>") : "";
+  if (prob.msgs.length){
+    $("#btnSavePA").disabled = true;
+    note("paNote", "誤入力があります。赤いボタンを見直してください。");
+    return;
+  }
 
   const miss = [];
   if (!p) miss.push("選手"); if (!ST.gameId) miss.push("試合"); if (!ST.pitcherId) miss.push("投手");
@@ -1643,11 +1787,13 @@ async function writeFailed(e){
 
 $("#btnSavePA").addEventListener("click", async ()=>{
   const pl = curPlayer(); if(!pl) return;
+  if (noteProblems(ST.result, ST.outSafe, [...ST.notes]).msgs.length){ updatePANote(); return; }
   const old = ST.editId ? DB.pas.find(x=>x.id===ST.editId) : null;
   if (ST.editId && !old){ setEditing(null); note("paNote","元の記録が見つかりませんでした。"); return; }
 
   const outSafe = RMAP[ST.result].batted ? ST.outSafe
     : ((ST.result==="walk"||ST.result==="hbp") ? null : "out");
+  if (!RMAP[ST.result].batted) DIR_KEYS.forEach(k=>ST.notes.delete(k));
   const pa = old
     // 修正：コースや球種はマネージャーには触らせない（サーバー側でも弾く）
     ? { ...old, result:ST.result, outSafe, notes:[...ST.notes],
@@ -1690,9 +1836,8 @@ function startEdit(id){
   chipSet("#selJudge", pa.judge || "");
   chipSet("#selResult", pa.result || "");
   chipSet("#selOutSafe", pa.outSafe || "");
-  Array.from($("#selNotes").children).forEach(c=>
-    c.setAttribute("aria-pressed", String(ST.notes.has(c.dataset.v))));
   $("#outSafeWrap").style.display = RMAP[pa.result] && RMAP[pa.result].batted ? "block" : "none";
+  $("#dirWrap").style.display     = RMAP[pa.result] && RMAP[pa.result].batted ? "block" : "none";
 
   const pi = DB.pitchers.find(x=>x.id===pa.pitcherId);
   const bats = curPlayer() ? curPlayer().bats : (pa.batsAt || "R");
@@ -1711,10 +1856,10 @@ function clearPA(){
   Array.from($("#zoneGrid").children).forEach(c=>c.setAttribute("aria-pressed","false"));
   Array.from($("#breakGrid").children).forEach(c=>c.setAttribute("aria-pressed","false"));
   Array.from($("#selResult").children).forEach(c=>c.setAttribute("aria-pressed","false"));
-  Array.from($("#selNotes").children).forEach(c=>c.setAttribute("aria-pressed","false"));
   chipSet("#selJudge",""); chipSet("#selOutSafe","");
   $("#breakHint").textContent = "";
   $("#outSafeWrap").style.display = "block";
+  $("#dirWrap").style.display = "block";
   updatePANote();
 }
 
@@ -1738,7 +1883,8 @@ function renderGamePAs(){
       const q = paSummary(pa);
       const tag = isHit(pa) ? '<span class="tag h">安打</span>'
         : `<span class="tag o">${isAtBat(pa)?"凡退":"打数外"}</span>`;
-      const nt = pa.notes.length ? "・" + pa.notes.map(k=>NMAP[k]).join("・") : "";
+      const bts = pa.batsAt || batsOf(pa.playerId);
+      const nt = pa.notes.length ? "・" + pa.notes.map(k=>DIR_KEYS.includes(k) ? dirLabel(k,bts) : (NMAP[k]||k)).join("・") : "";
       return `<div class="pa"><div class="ord">${i+1}</div><div class="bd" data-edit="${pa.id}">
         <div class="t">${RMAP[pa.result].label}${nt}</div>
         <div class="s">${q.arrow} ${esc(REL_LBL[q.rel])}／${esc(q.where)}・${q.jd}</div>
@@ -1950,7 +2096,8 @@ function renderStats(){
     note("sNote", storeReady ? "選手を登録して打席を記録すると集計されます。" : "読み込み中です…");
     $("#heatmap").innerHTML=""; $("#hmLegend").innerHTML=""; $("#hmBase").textContent="";
     $("#tRank").innerHTML=""; note("rkNote","");
-    ["#tSide","#tHeight","#tBreak","#tMove","#tPitcher","#tQuality"].forEach(s=>$(s).innerHTML="");
+    ["#tSide","#tHeight","#tBreak","#tMove","#tPitcher","#tQuality","#tDir","#tDirCourse","#tScene","#xStats"].forEach(s=>$(s).innerHTML="");
+    ["dirNote","sceneNote","xNote"].forEach(id=>note(id,""));
     return;
   }
   const bats = batsOf(F.player);
@@ -2001,6 +2148,69 @@ function renderStats(){
   tableOf("#tPitcher","投手タイプ", prows, baseline);
 
   tableOf("#tQuality","打球", groupRows(list, pa=>pa.result, RESULTS.map(r=>r.k), k=>RMAP[k].label), baseline);
+  renderDirScene(list, bats, baseline);
+}
+
+/* ---- 打球方向・場面・内野安打とバント ---- */
+function renderDirScene(list, bats, baseline){
+  const batsOfPa = pa => pa.batsAt || bats;
+  // 打球方向
+  const batted = list.filter(pa => RMAP[pa.result] && RMAP[pa.result].batted);
+  const withDir = batted.filter(dirOf);
+  tableOf("#tDir", "打球方向", groupRows(withDir, dirOf, DIR_KEYS, k=>dirLabel(k, bats)), baseline);
+  if (withDir.length){
+    const pct = k => Math.round(withDir.filter(pa=>dirOf(pa)===k).length / withDir.length * 100);
+    note("dirNote", `方向を入れた打球 ${withDir.length}本（打球 ${batted.length}本のうち）。`
+      + DIR_KEYS.map(k=>`${DIRS.find(d=>d.k===k).label} ${pct(k)}%`).join("・")
+      + "。打率は、その方向に飛んだ打球だけで数えています。"
+      + (withDir.length < batted.length ? "　方向を入れていない打球は数に入りません。" : ""));
+  } else {
+    note("dirNote", batted.length ? "まだ打球方向が入っていません。打席を記録するときに「⑥ 打球方向」を入れると出ます。" : "");
+  }
+  // コース × 打球方向
+  const el = $("#tDirCourse");
+  if (!withDir.length){ el.innerHTML = ""; }
+  else {
+    const sides = ["in","mid","out"];
+    // 見出しは短く（スマホでも「流し」の列まで1画面に収める。向きは上の表に出ている）
+    el.innerHTML = `<thead><tr><th>コース</th>${DIRS.map(d=>`<th>${d.label}</th>`).join("")}<th>計</th></tr></thead><tbody>`
+      + sides.map(sd=>{
+        const row = withDir.filter(pa=>inOut(pa.col, batsOfPa(pa))===sd);
+        const cell = sub => { if (!sub.length) return '<td><span class="dim">—</span></td>';
+          const a = avgOf(sub);
+          return `<td>${sub.length}本<span class="s">${a.ab ? fmtAvg(a.avg) : "—"}</span></td>`; };
+        return `<tr><td class="lab">${({in:"イン<br>コース",mid:"真ん中",out:"アウト<br>コース"})[sd]}</td>`
+          + DIR_KEYS.map(k=>cell(row.filter(pa=>dirOf(pa)===k))).join("")
+          + `<td><b>${row.length}</b>本</td></tr>`;
+      }).join("") + "</tbody>";
+  }
+  // 場面別
+  const risp = list.filter(pa=>pa.notes.includes("risp"));
+  const two  = list.filter(pa=>pa.notes.includes("twoStrike"));
+  const rows = [{label:"すべての打席", s:avgOf(list)}];
+  if (risp.length) rows.push({label:"得点圏", s:avgOf(risp)});
+  if (two.length)  rows.push({label:"追い込まれてから", s:avgOf(two)});
+  tableOf("#tScene", "場面", rows, baseline);
+  const kr = l => { const a = avgOf(l); return a.pa ? Math.round(a.so / a.pa * 100) + "%" : "—"; };
+  note("sceneNote", (risp.length || two.length)
+    ? `三振の割合：すべて ${kr(list)}` + (two.length ? `・追い込まれてから ${kr(two)}` : "") + (risp.length ? `・得点圏 ${kr(risp)}` : "")
+      + "。得点圏・追い込まれてからは、「⑧ 場面」の印を付けた打席だけで数えます（付け忘れが多いと少なめに出ます）。"
+    : "まだ「⑧ 場面」の印が付いた打席がありません。");
+  // 内野安打とバント
+  const s = avgOf(list);
+  const bo = list.filter(pa=>isHit(pa) && pa.notes.includes("beatOut")).length;
+  const avgNoBo = s.ab ? (s.h - bo) / s.ab : null;
+  const sb = list.filter(pa=>pa.notes.includes("sacBunt")).length;
+  const bf = list.filter(pa=>pa.notes.includes("buntFail")).length;
+  $("#xStats").innerHTML =
+      `<div class="box"><div class="k">内野安打</div><div class="v">${bo}<span style="font-size:13px">本</span></div>`
+    + `<div class="s">安打 ${s.h}本のうち ${s.h ? Math.round(bo/s.h*100) : 0}%</div></div>`
+    + `<div class="box"><div class="k">内野安打を除いた打率</div><div class="v">${fmtAvg(avgNoBo)}</div>`
+    + `<div class="s">いつもの打率 ${fmtAvg(s.avg)}</div></div>`
+    + `<div class="box"><div class="k">送りバント成功率</div><div class="v">${(sb+bf) ? Math.round(sb/(sb+bf)*100)+"%" : "—"}</div>`
+    + `<div class="s">成功 ${sb}・失敗 ${bf}</div></div>`;
+  note("xNote", "内野安打を除いた打率は、打球の質で打てているかを見るための目安です。"
+    + "送りバント成功率は「送りバント」と「バント失敗」の記録で数えます。");
 }
 
 /* ============================================================
@@ -2008,7 +2218,7 @@ function renderStats(){
    ============================================================ */
 function csvText(){
   const head = ["日付","相手校","選手","打席左右","投げ腕","投げ方","球速","コース番号","高さ",
-    "イン/アウト","判定","曲がり方","結果","アウトセーフ","補足","打数","安打"];
+    "イン/アウト","判定","曲がり方","結果","アウトセーフ","打球方向","補足","得点圏","2ストライク後","打数","安打"];
   const rows = DB.pas.slice().sort((a,b)=>a.ts-b.ts).map(pa=>{
     const g  = DB.games.find(x=>x.id===pa.gameId) || {};
     const pi = DB.pitchers.find(x=>x.id===pa.pitcherId) || {};
@@ -2020,7 +2230,10 @@ function csvText(){
       z===null?"ボールゾーン":z, H_LBL[heightBand(pa.row)], SIDE_LBL[inOut(pa.col,bats)],
       pa.judge==="ball"?"ボール":"ストライク", REL_LBL[breakRel(pa.brk,bats)],
       (RMAP[pa.result]||{}).label||"", pa.outSafe==="safe"?"セーフ":(pa.outSafe==="out"?"アウト":""),
-      pa.notes.map(k=>NMAP[k]).join(" "), isAtBat(pa)?1:0, isHit(pa)?1:0];
+      dirOf(pa) ? dirLabel(dirOf(pa), bats) : "",
+      pa.notes.filter(k=>!DIR_KEYS.includes(k) && !SCENE_KEYS.includes(k)).map(k=>NMAP[k]||k).join(" "),
+      pa.notes.includes("risp")?1:0, pa.notes.includes("twoStrike")?1:0,
+      isAtBat(pa)?1:0, isHit(pa)?1:0];
   });
   return [head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
 }
@@ -2090,10 +2303,11 @@ $("#btnWipe").addEventListener("click", async ()=>{
 // 分析の見方を試したり、選手に説明したりするのに使えます。
 const SAMPLE_BATTERS = [
   // inHit/outHit＝イン・アウトを打てる確率、brkAdj＝変化球のときの増減
-  {name:"見本1 引っ張り", bats:"R", inHit:.56, outHit:.17, brkAdj:-.04, eye:.05},
-  {name:"見本2 広角",     bats:"L", inHit:.20, outHit:.46, brkAdj:-.02, eye:.08},
-  {name:"見本3 直球型",   bats:"R", inHit:.54, outHit:.48, brkAdj:-.34, eye:.06},
-  {name:"見本4 出塁型",   bats:"L", inHit:.26, outHit:.28, brkAdj:-.06, eye:.24}
+  // dirW＝打球方向の割合（引っ張り・センター・流し）。oppoOut＝外角は流す。fast＝足で内野安打
+  {name:"見本1 引っ張り", bats:"R", inHit:.56, outHit:.17, brkAdj:-.04, eye:.05, dirW:[.66,.22,.12]},
+  {name:"見本2 広角",     bats:"L", inHit:.20, outHit:.46, brkAdj:-.02, eye:.08, dirW:[.30,.35,.35], oppoOut:true},
+  {name:"見本3 直球型",   bats:"R", inHit:.54, outHit:.48, brkAdj:-.34, eye:.06, dirW:[.40,.34,.26]},
+  {name:"見本4 出塁型",   bats:"L", inHit:.26, outHit:.28, brkAdj:-.06, eye:.24, dirW:[.24,.44,.32], fast:true}
 ];
 const SAMPLE_ARMS = [
   {name:"見本A 制球",   throws:"R", f1:.80, bb:.03, k:.15, hit:.22, gb:.72, fade:.02, vsL:-.02},
@@ -2171,15 +2385,23 @@ $("#btnSample").addEventListener("click", async ()=>{
           continue;
         }
         const safe = rnd() < pHit;
-        const res  = safe ? pick(["liner","hardGrounder","fly"])
-                          : pick(["fly","weakGrounder","hardGrounder","swingingK","calledK","liner"]);
+        let res  = safe ? pick(["liner","hardGrounder","fly"])
+                        : pick(["fly","weakGrounder","hardGrounder","swingingK","calledK","liner"]);
+        let note = !safe ? [] : (rnd()<.12 ? ["double"] : (rnd()<.05 ? ["homerun"] : ["single"]));
+        if (safe && b.fast && rnd() < .35){ res = "weakGrounder"; note = ["single","beatOut"]; }  // 足で稼ぐ
         const batted = RMAP[res].batted;
-        const note = !safe ? [] : (rnd()<.12 ? ["double"] : (rnd()<.05 ? ["homerun"] : ["single"]));
+        const extra = [];
+        if (batted){
+          const w = (side==="out" && b.oppoOut) ? [.12,.28,.60] : b.dirW, r2 = rnd();
+          extra.push(r2 < w[0] ? "dirPull" : (r2 < w[0]+w[1] ? "dirCenter" : "dirOppo"));
+        }
+        if (rnd() < .28) extra.push("risp");
+        if (!batted || rnd() < .35) extra.push("twoStrike");          // 三振は必ず追い込まれている
         batch.push(["pas", Object.assign({id:uid(), playerId:b.id, gameId:g.id, pitcherId:op.id,
           ts:base+bi*1000+i*60000, row, col,
           judge: inStrikeZone(row,col)?"strike":"ball", brk, result:res,
           outSafe: batted ? (safe?"safe":"out") : "out",
-          notes: batted ? note : [], batsAt:b.bats}, S)]);
+          notes: (batted ? note : []).concat(extra), batsAt:b.bats}, S)]);
       }
     });
 
