@@ -319,7 +319,7 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="btnrow ao"><button class="btn sec" id="btnNewPlayer" type="button">打者を追加（ログインなし）</button></div>
     <div id="newPlayerForm" style="display:none;margin-top:10px">
       <div class="row">
-        <div style="flex:2"><label class="fld" for="npName">選手名</label>
+        <div style="flex:2"><label class="fld" for="npName">選手名<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
           <input type="text" id="npName" placeholder="例）山田 太郎"></div>
         <div><label class="fld">打席</label>
           <div class="chips" id="npBats">
@@ -452,7 +452,7 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card ao">
     <h2>自チームの投手<span class="hint">監督・コーチのみ</span></h2>
     <div class="row2">
-      <div><label class="fld" for="armName">名前</label><input id="armName" placeholder="例）橋本"></div>
+      <div><label class="fld" for="armName">名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label><input id="armName" placeholder="例）橋本 大輔"></div>
       <div><label class="fld">投げる手</label><div class="chips" id="armThrows">
         <button class="chip" type="button" data-v="R" aria-pressed="true">右投げ</button>
         <button class="chip" type="button" data-v="L" aria-pressed="false">左投げ</button>
@@ -727,7 +727,7 @@ body.adm nav.tabs button.ao{display:flex}
       <div class="note">ゴロが多い投手か、フライが多い投手かで、守備の位置取りや併殺の期待値が変わります。</div>
     </div>
 
-    <div class="card">
+    <div class="card" id="cardPRank">
       <h2>投手別ランキング<span class="hint">上位10名</span></h2>
       <div class="filters" style="grid-template-columns:1fr">
         <div><label class="fld" for="fPRank">並び順</label><select id="fPRank"></select></div>
@@ -766,7 +766,7 @@ body.adm nav.tabs button.ao{display:flex}
     <div id="userList"></div>
     <div class="btnrow"><button class="btn sec" id="btnAddUser" type="button">アカウントを追加</button></div>
     <div id="addUserForm" style="display:none;margin-top:12px">
-      <label class="fld" for="auName">① 名前</label>
+      <label class="fld" for="auName">① 名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
       <input type="text" id="auName" placeholder="例）山田 太郎">
 
       <label class="fld" style="margin-top:13px">② 権限</label>
@@ -855,7 +855,7 @@ body.adm nav.tabs button.ao{display:flex}
       はじめての設定です。<b>監督・コーチのアカウント</b>を作ります。<br>
       部員やほかのコーチは、このあとアプリの中から追加できます。
     </div>
-    <label class="fld" for="suName">お名前</label>
+    <label class="fld" for="suName">お名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間に全角スペース）</span></label>
     <input type="text" id="suName" placeholder="例）後藤 貴明" autocomplete="off">
     <label class="fld" for="suId" style="margin-top:11px">ログインID<span style="font-weight:400;color:var(--muted)">（半角英数）</span></label>
     <input type="text" id="suId" placeholder="例）goto" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
@@ -1172,6 +1172,7 @@ function startPolling(){
 }
 
 function redrawAll(){
+  applyPitchView();
   renderPlayers(); renderGames(); renderPitchers(); renderGamePAs();
   renderPAll();
   updateZoneLabels(); updatePANote(); renderPlayerList();
@@ -1179,6 +1180,28 @@ function redrawAll(){
 }
 
 /* ---- 権限 ---- */
+// 名前を比べるときはスペースを無視する（「橋本 大輔」と「橋本　大輔」を同じ人とみなす）
+function sameName(a,b){
+  const k = x => String(x||"").replace(/[\s\u3000]/g,"");
+  return !!k(a) && k(a) === k(b);
+}
+// 自分に結び付いている投手（名簿で指定、無ければ名前が同じもの）
+function myArms(){
+  if (!ME) return [];
+  return DB.arms.filter(a => a.userId != null
+    ? Number(a.userId) === Number(ME.id)
+    : sameName(a.name, ME.name));
+}
+function canSeePitch(){    return canAdmin || isManager || myArms().length > 0; }
+function canSeeAllPitch(){ return canAdmin || isManager; }
+// 投球の分析を出すかどうか。選手は自分の投球だけ見られる。
+function applyPitchView(){
+  const chip = document.querySelector('#statMode [data-v="pitch"]');
+  if (chip) chip.style.display = canSeePitch() ? "" : "none";
+  if (!canSeePitch() && statMode === "pitch"){ statMode = "bat"; chipSet("#statMode", statMode); }
+  const rank = document.getElementById("cardPRank");
+  if (rank) rank.style.display = canSeeAllPitch() ? "" : "none";
+}
 function applyRole(){
   document.body.classList.toggle("ro", canWrite === false);
   document.body.classList.toggle("adm", canAdmin === true);
@@ -1189,13 +1212,14 @@ function applyRole(){
   }
   const who = $("#whoami");
   if (who && ME) who.textContent = ME.name + "（" + ROLE_LBL[ME.role] + "）";
+  applyPitchView();
   const sn = document.getElementById("shareNote");
   if (!sn) return;
   sn.innerHTML = canAdmin
     ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
       + "・<b>監督・コーチ</b>：すべて操作できます<br>"
       + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。打席の<b>結果だけ</b>直せます（コースや球種は直せません）。新しい記録や削除はできません<br>"
-      + "・<b>選手</b>：打席の記録と分析の閲覧。選手名簿やこのタブは触れません<br>"
+      + "・<b>選手</b>：打席の記録と分析の閲覧。投球の分析は自分の分だけ見られます<br>"
       + "・<b>閲覧のみ</b>：分析を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
@@ -2595,11 +2619,33 @@ function buildBFResults(){
 }
 function renderArms(){
   const host = $("#armList"); if(!host) return;
+  const accs = USERS.filter(u=>u.role==="player");
   host.innerHTML = DB.arms.length
-    ? DB.arms.map(a=>`<div class="pa"><div class="bd"><b>${esc(a.name)}</b>`
-        + `<div class="s">${THROW_LBL[a.throws]||""}</div></div>`
-        + `<button class="del ao" data-delarm="${a.id}" type="button" aria-label="削除">✕</button></div>`).join("")
+    ? DB.arms.map(a=>{
+        const auto = a.userId==null && accs.some(u=>sameName(u.name, a.name));
+        return `<div class="pa"><div class="bd"><b>${esc(a.name)}</b>`
+        + `<div class="s">${THROW_LBL[a.throws]||""}</div>`
+        + `<label class="fld" style="margin-top:7px">この投手のアカウント`
+        + `<span class="hint" style="display:block;font-weight:400">本人だけが自分の投球分析を見られます</span></label>`
+        + `<select data-armuser="${a.id}">`
+        + `<option value=""${a.userId==null?" selected":""}>`
+        + `${auto?"自動（名前が同じアカウント）":"結び付けない"}</option>`
+        + accs.map(u=>pOpt(u.id, u.name, a.userId==null?"":a.userId)).join("")
+        + `</select></div>`
+        + `<button class="del ao" data-delarm="${a.id}" type="button" aria-label="削除">✕</button></div>`;
+      }).join("")
     : '<div class="empty-note">まだ投手が登録されていません。</div>';
+  host.querySelectorAll("[data-armuser]").forEach(sel=>sel.addEventListener("change", async e=>{
+    const a = DB.arms.find(x=>x.id===sel.dataset.armuser); if (!a) return;
+    const v = e.target.value;
+    const next = {...a};
+    if (v) next.userId = Number(v); else delete next.userId;
+    try{ await put("arms", next); CACHE.arms[next.id]=next; rebuild(); renderArms();
+         note("armNote", v
+           ? `${next.name} を ${(USERS.find(u=>String(u.id)===v)||{}).name||""} のアカウントに結び付けました。`
+           : `${next.name} の結び付けを外しました。名前が同じアカウントがあれば、そちらが本人として扱われます。`); }
+    catch(err){ writeFailed(err); }
+  }));
   host.querySelectorAll("[data-delarm]").forEach(b=>b.addEventListener("click", async ()=>{
     const id = b.dataset.delarm, a = DB.arms.find(x=>x.id===id);
     if (DB.bf.some(x=>x.armId===id) || DB.inn.some(x=>x.armId===id)){
@@ -3174,9 +3220,10 @@ function leadStats(bfs, inns){
 
 /* ---- 投球：分析の描画 ---- */
 function fillPFilters(){
-  if (!DB.arms.some(a=>a.id===PF.arm)) PF.arm = DB.arms.length ? DB.arms[0].id : "";
-  $("#fPArm").innerHTML = DB.arms.length
-    ? DB.arms.map(a=>pOpt(a.id, `${a.name}（${THROW_LBL[a.throws]||""}）`, PF.arm)).join("")
+  const list = canSeeAllPitch() ? DB.arms : myArms();   // 選手は自分の投球だけ
+  if (!list.some(a=>a.id===PF.arm)) PF.arm = list.length ? list[0].id : "";
+  $("#fPArm").innerHTML = list.length
+    ? list.map(a=>pOpt(a.id, `${a.name}（${THROW_LBL[a.throws]||""}）`, PF.arm)).join("")
     : '<option value="">投手がいません</option>';
   $("#fPRecent").innerHTML = pOpt("","すべての試合",PF.recent)
     + Object.entries(RECENTS).map(([k,v])=>pOpt(k,v,PF.recent)).join("");
@@ -3344,7 +3391,8 @@ function renderPRank(){
   note("prkNote", `対戦打者${RANK_MIN_BF}人以上が対象です。「投手」以外の絞り込みは全員に同じようにかかります。`);
 }
 function renderStatsAll(){
-  const pitch = (statMode === "pitch");
+  applyPitchView();
+  const pitch = (statMode === "pitch") && canSeePitch();
   $("#statBat").style.display   = pitch ? "none"  : "block";
   $("#statPitch").style.display = pitch ? "block" : "none";
   if (pitch) renderPStats(); else renderStats();
