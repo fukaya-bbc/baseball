@@ -158,6 +158,9 @@ button.btn:disabled{opacity:.4;cursor:not-allowed}
 .lrow .s{font-size:12px;color:var(--muted)}
 .lrow.addmore{border:0;background:transparent;padding:1px 11px 7px;margin:-5px 0 4px}
 .lrow.addmore .s{font-size:11px}
+.lrow.next{border-color:#0075C6;border-width:2px;background:rgba(0,117,198,.08)}
+.lrow.next .no{color:#0075C6}
+.lrow.off{opacity:.45;cursor:default}
 .olu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .olu .ob{border:1px solid var(--border);border-radius:9px;padding:6px}
 .olu .ob .n{font-size:11px;color:var(--muted);text-align:center;margin-bottom:4px}
@@ -496,7 +499,9 @@ body.adm nav.tabs button.ao{display:flex}
     </div>
     <div class="cur" id="bfWho">—</div>
     <div class="row2">
-      <div><label class="fld" for="selLineup">打順</label><select id="selLineup"></select></div>
+      <div><label class="fld" for="selLineup">打順</label><select id="selLineup"></select>
+        <button class="btn sec" id="btnFreeLineup" type="button"
+          style="margin-top:6px;padding:6px 10px;font-size:12px">打順を自分で選ぶ</button></div>
       <div><label class="fld" for="selBats">相手打者</label><select id="selBats"></select></div>
     </div>
     <div class="note" id="batsHint"></div>
@@ -2486,7 +2491,7 @@ function oppBatsAuto(gid, inning, lineup, ts){
 }
 const OPPB_LBL = {R:"右打者", L:"左打者"};
 const PST = {gameId:null, armId:null, inning:1, lineup:null, firstArmId:null, bats:null,
-             first:null, result:null, editId:null};
+             first:null, result:null, editId:null, freeLineup:false};
 const PF  = {arm:"", recent:"", opp:""};
 const PRANKS = {f1:"初球ストライク率の高い順", lead:"先頭を切った率の高い順",
                 rp9:"失点率の低い順", bb:"与四死球率の低い順", baa:"被打率の低い順"};
@@ -2637,12 +2642,18 @@ function renderInnBFs(){
   const ordered = innBFs(PST.gameId, PST.inning);
   const seq = {}; ordered.forEach((x,i)=> seq[x.id] = i+1);
   const noL = ordered.filter(x=>!x.lineup);
+  const exp = suggestLineup(PST.gameId, PST.inning);
+  const done = outsInInning(PST.gameId, PST.inning, null) >= 3;
   let html = "";
-  for (let p=1; p<=LINEUP_N; p++){
+  // この回の先頭打者から打順の順に並べる（まだ回ってこない打順は出さない）
+  const head = (ordered.length && ordered[0].lineup) ? Number(ordered[0].lineup) : exp;
+  const seqOrder = Array.from({length:LINEUP_N}, (_,k)=> ((head - 1 + k) % LINEUP_N) + 1);
+  for (const p of seqOrder){
     const cells = bfsOfCell(PST.gameId, PST.inning, p);
     if (!cells.length){
-      html += `<div class="lrow" data-new="${p}"><div class="no">${p}</div>`
-            + `<div class="bd"><span class="s">タップして記録</span></div></div>`;
+      if (p === exp && !done)
+        html += `<div class="lrow next" data-new="${p}"><div class="no">${p}</div>`
+          + `<div class="bd"><b>${p}番を記録する</b><div class="s">ここを押して入力します</div></div></div>`;
       continue;
     }
     cells.forEach((x,j)=>{
@@ -2657,7 +2668,8 @@ function renderInnBFs(){
         + `${seq[x.id]===1?"　【先頭打者】":""}</div></div>`
         + `<button class="del wo" data-delbf="${x.id}" type="button" aria-label="削除">✕</button></div>`;
     });
-    if (cells.length) html += `<div class="lrow addmore" data-new="${p}">`
+    if (cells.length && p === exp && !done)
+      html += `<div class="lrow addmore" data-new="${p}">`
         + `<div class="no"></div><div class="bd"><span class="s">＋ この打順にもう1打席</span></div></div>`;
   }
   noL.forEach(x=>{
@@ -2716,8 +2728,11 @@ function renderSbGrid(){
     const [i,p] = b.dataset.go.split(":").map(Number);
     PST.inning = i; setEditingBF(null); clearBF(); renderPAll();
     const cs = bfsOfCell(PST.gameId, i, p);
-    if (cs.length) startEditBF(cs[0].id);
-    else if (canWrite !== false) startNewBF(p);
+    if (cs.length){ startEditBF(cs[0].id); return; }
+    if (canWrite === false) return;
+    const exp = suggestLineup(PST.gameId, i);
+    startNewBF(exp);
+    if (p !== exp) note("bfNote", `${i}回は ${exp}番 からです。${p}番 はまだ記録できません。`);
   }));
 }
 function renderGameInn(){
@@ -2786,20 +2801,31 @@ function fillRelief(){
   $("#selFirstArm").innerHTML = DB.arms.map(a=>
     pOpt(a.id, `${a.name}（${THROW_LBL[a.throws]||""}）`, PST.firstArmId||"")).join("");
 }
+// 打順は原則「前の打者の次」に固定する。直したいときだけ自分で選べる。
+function lineupLocked(){ return !PST.editId && !PST.freeLineup; }
 function fillLineupSel(){
-  $("#selLineup").innerHTML = pOpt("", "打順なし", PST.lineup||"")
+  const exp = suggestLineup(PST.gameId, PST.inning);
+  if (lineupLocked()) PST.lineup = exp;
+  const sel = $("#selLineup");
+  sel.innerHTML = pOpt("", "打順なし", PST.lineup||"")
     + Array.from({length:LINEUP_N},(_,i)=>pOpt(i+1, `${i+1}番`, PST.lineup||"")).join("");
+  sel.disabled = lineupLocked();
+  const fb = $("#btnFreeLineup");
+  if (fb) fb.style.display = lineupLocked() ? "inline-flex" : "none";
   const a = curArm();
-  $("#bfWho").innerHTML = `<b>${PST.inning}回</b>`
-    + (PST.lineup ? ` <b>${PST.lineup}番</b>` : " 打順なし")
-    + (a ? `／投手 <b>${esc(a.name)}</b>` : "");
+  $("#bfWho").innerHTML = `<b style="font-size:17px">${PST.inning}回　`
+    + (PST.lineup ? `${PST.lineup}番` : "打順なし") + `</b>`
+    + (a ? `　／　投手 <b>${esc(a.name)}</b>` : "")
+    + (lineupLocked() ? `<div class="s" style="margin-top:3px;color:var(--muted)">`
+        + `打順の順に記録します。別の打順にしたいときは下のボタンから。</div>` : "");
 }
 function clearBF(){
+  PST.freeLineup = false;
   PST.first=null; PST.result=null;
   chipSet("#selFirst",""); chipSet("#selBFResult",""); fillLineupSel(); updateBFNote();
 }
 function startNewBF(lineup, scroll){
-  setEditingBF(null);
+  setEditingBF(null); PST.freeLineup = false;
   PST.lineup = lineup || null; PST.first=null; PST.result=null; PST.firstArmId=null; PST.bats=null;
   chipSet("#selFirst",""); chipSet("#selBFResult","");
   fillLineupSel(); fillBatsSel(); fillRelief(); updateBFNote(); note("bfNote","");
@@ -2817,9 +2843,11 @@ function startEditBF(id){
   PST.lineup = x.lineup ? Number(x.lineup) : null;
   PST.firstArmId = x.firstArmId || null; PST.bats = x.bats || null;
   PST.first=x.first; PST.result=x.result;
+  PST.freeLineup = false;
+  setEditingBF(id);   // ← 打順欄を作る前に「修正中」にする（修正中は打順を自由に選べる）
   renderPSelectors(); renderInnBFs(); renderSbGrid(); fillLineupSel(); fillBatsSel(); fillRelief();
   chipSet("#selFirst", x.first); chipSet("#selBFResult", x.result);
-  setEditingBF(id); updateBFNote(); note("bfNote","");
+  updateBFNote(); note("bfNote","");
   $("#bfTitle").scrollIntoView({behavior:"smooth", block:"start"});
 }
 function renderPAll(){
@@ -2871,6 +2899,10 @@ $("#bfRelief").addEventListener("click", ()=>{
   fillRelief();
 });
 $("#selFirstArm").addEventListener("change", e=>{ PST.firstArmId = e.target.value||null; });
+$("#btnFreeLineup").addEventListener("click", ()=>{
+  PST.freeLineup = true; fillLineupSel(); fillBatsSel();
+  note("bfNote","打順を自分で選べるようにしました。記録すると元に戻ります。");
+});
 $("#selLineup").addEventListener("change", e=>{
   PST.lineup = e.target.value ? Number(e.target.value) : null; fillLineupSel(); fillBatsSel();
 });
@@ -2925,6 +2957,14 @@ $("#selInning").addEventListener("change", e=>{
 $("#btnSaveBF").addEventListener("click", async ()=>{
   if (!(PST.gameId && PST.armId && PST.first && PST.result)) return;
   const old = PST.editId ? DB.bf.find(x=>x.id===PST.editId) : null;
+  if (!old && !PST.freeLineup){
+    const exp = suggestLineup(PST.gameId, PST.inning);
+    if (PST.lineup && Number(PST.lineup) !== exp){
+      PST.lineup = exp; fillLineupSel();
+      note("bfNote", `${PST.inning}回は ${exp}番 からです。打順を直しました。もう一度確かめてから記録してください。`);
+      return;
+    }
+  }
   // 1イニングは3アウトまで
   const already = outsInInning(PST.gameId, PST.inning, old ? old.id : null);
   const addOuts = BF_OUTS[PST.result] || 0;
@@ -2952,7 +2992,7 @@ $("#btnSaveBF").addEventListener("click", async ()=>{
       note("bfNote", `3アウトです。この回の球数を入れてください。`);
       focusInnCard();
     } else {
-      startNewBF(suggestLineup(PST.gameId, PST.inning), false);
+      startNewBF(suggestLineup(PST.gameId, PST.inning));   // 画面も入力欄へ戻す
       note("bfNote", `記録しました。次は ${PST.lineup}番 です。`);
     }
     if ($("#p-stats").classList.contains("on")) renderStatsAll();
@@ -3014,7 +3054,7 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
       PST.armId = pendingArm; pendingArm = null;
       renderPAll();
       note("innNote", `${savedName} の球数を保存しました。${nn} に交代しました。`);
-      startNewBF(suggestLineup(PST.gameId, PST.inning), false);
+      startNewBF(suggestLineup(PST.gameId, PST.inning));
     } else if (!old && outsInInning(PST.gameId, PST.inning, null) >= 3){
       PST.inning = Math.min(20, savedInning + 1);      // 3アウトなら次の回へ
       PST.lineup = suggestLineup(PST.gameId, PST.inning);
