@@ -544,7 +544,7 @@ body.adm nav.tabs button.ao{display:flex}
   </div>
 
   <div class="card">
-    <h2>この回（打順の順）<span class="hint">タップで入力・修正</span></h2>
+    <h2>この回（打順の順）<span class="hint" id="innOutsHint">タップで入力・修正</span></h2>
     <div id="innBFs"></div>
     <div class="note">スコアブックと同じ並びです。その回に回ってこなかった打順は空のままで大丈夫です。</div>
   </div>
@@ -2420,6 +2420,19 @@ const BF_ABBR = {strikeout:"三振", groundOut:"ゴロ", flyOut:"フライ", dp:
                  hit:"安打", walk:"四球", hbp:"死球", error:"失策", sac:"犠打"};
 const LINEUP_N = 9;
 const BF_ON  = ["hit","walk","hbp","error"];        // 出塁した
+const BF_OUTS = {strikeout:1, groundOut:1, flyOut:1, sac:1, dp:2};   // 結果ごとのアウト数
+// その回のアウト数。exceptBf は「いま直している打者」を除くときに使う。
+function bfOutsIn(gid, i, exceptBf){
+  return DB.bf.filter(x=>x.gameId===gid && Number(x.inning)===Number(i) && x.id!==exceptBf)
+              .reduce((t,x)=>t + (BF_OUTS[x.result]||0), 0);
+}
+function extraOutsIn(gid, i, exceptInn){
+  return DB.inn.filter(x=>x.gameId===gid && Number(x.inning)===Number(i) && x.id!==exceptInn)
+               .reduce((t,x)=>t + (x.extraOuts||0), 0);
+}
+function outsInInning(gid, i, exceptBf){
+  return bfOutsIn(gid,i,exceptBf) + extraOutsIn(gid,i,null);
+}
 // 打席の途中で交代した場合、初球はこちらの投手のもの
 function firstArmOf(x){ return x.firstArmId || x.armId; }
 // 相手打者の左右。打席ごとの指定があればそれ、無ければ相手の打順表から。
@@ -2540,9 +2553,15 @@ function renderPSelectors(){
     : '<option value="">投手がいません</option>';
   $("#selInning").innerHTML = Array.from({length:20},(_,i)=>pOpt(i+1, `${i+1}回`, PST.inning)).join("");
   const g = curPGame(), a = curArm();
+  const ou = PST.gameId ? outsInInning(PST.gameId, PST.inning, null) : 0;
   $("#pCtx").innerHTML = (g && a)
     ? `<b>${esc(a.name)}</b>（${THROW_LBL[a.throws]}）が <b>${esc(g.opponent||"")}</b> の <b>${PST.inning}回</b>`
+      + `　<b style="color:${ou>=3?"#b8471f":"inherit"}">${ou}アウト</b>`
     : "試合と投手を選んでください。投手の登録は監督・コーチが行います。";
+  const oh = $("#innOutsHint");
+  if (oh) oh.innerHTML = ou >= 3
+    ? '<b style="color:#b8471f">3アウト（この回は終わりです）</b>'
+    : `いま${ou}アウト`;
   const ia = curArm();
   $("#innCtx").innerHTML = ia
     ? `<b>${PST.inning}回</b> の <b>${esc(ia.name)}</b> が投げたぶん`
@@ -2824,6 +2843,15 @@ $("#selInning").addEventListener("change", e=>{
 $("#btnSaveBF").addEventListener("click", async ()=>{
   if (!(PST.gameId && PST.armId && PST.first && PST.result)) return;
   const old = PST.editId ? DB.bf.find(x=>x.id===PST.editId) : null;
+  // 1イニングは3アウトまで
+  const already = outsInInning(PST.gameId, PST.inning, old ? old.id : null);
+  const addOuts = BF_OUTS[PST.result] || 0;
+  if (addOuts && already + addOuts > 3){
+    note("bfNote", already >= 3
+      ? `${PST.inning}回はすでに3アウトです。回を選び直すか、間違えて入れた打者をタップして直してください。`
+      : `いま${already}アウトなので、この結果だと${already + addOuts}アウトになってしまいます。`);
+    return;
+  }
   const fa = (PST.firstArmId && PST.firstArmId !== PST.armId) ? PST.firstArmId : null;
   const rec = old
     ? { ...old, armId:PST.armId, lineup:PST.lineup||null, firstArmId:fa, bats:PST.bats||null,
@@ -2876,10 +2904,17 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
   if (pitches !== null && pitches > 99){
     note("innNote","1イニングの球数が99球を超えています。入れ方を確かめてください。"); return;
   }
+  const xo = num($("#innOuts").value.trim(), 9) || 0;
+  const base = bfOutsIn(PST.gameId, PST.inning, null)
+             + extraOutsIn(PST.gameId, PST.inning, old ? old.id : null);
+  if (base + xo > 3){
+    note("innNote", `打者の記録ですでに${base}アウトあるので、その他のアウトを${xo}にすると`
+      + `${base + xo}アウトになってしまいます。`); return;
+  }
   const rec = { ...(old || {id:uid()}), gameId:PST.gameId, inning:PST.inning, armId:PST.armId,
     pitches,
     runs:      num($("#innRuns").value.trim(), 30),
-    extraOuts: num($("#innOuts").value.trim(), 9),
+    extraOuts: xo,
     tb:        innTb || false };
   try{ await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild(); renderPAll();
        note("innNote", `${PST.inning}回（${(curArm()||{}).name||""}）を保存しました。`);
