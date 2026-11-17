@@ -273,8 +273,9 @@ body.editing #btnSavePA{background:#b8471f}
 .palist .bd{cursor:pointer}
 .ao{display:none}
 nav.tabs button.ao{display:none}
-/* ウエイト：選手と監督・コーチだけ（マネージャー・閲覧のみには出さない） */
+/* ウエイト：選手・トレーナー・監督・コーチ（マネージャー・閲覧のみには出さない） */
 body.mgr nav.tabs button.wtab,body.ro nav.tabs button.wtab{display:none}
+body.coach nav.tabs button.wtab{display:flex}       /* 監督・コーチは見るだけでウエイトのタブを使う */
 .instr{display:flex;gap:8px;flex-wrap:wrap}
 .instr .b{flex:1;min-width:76px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--neutral)}
 .instr .b:first-child{flex:1.9}
@@ -282,7 +283,14 @@ body.mgr nav.tabs button.wtab,body.ro nav.tabs button.wtab{display:none}
 .instr .k{font-size:11px;color:var(--muted);font-weight:650}.instr .v{font-size:15px;font-weight:700;margin-top:2px}
 .guide{border:1px solid rgba(0,117,198,.35);background:rgba(0,117,198,.06);border-radius:12px;padding:10px 12px;margin-top:12px}
 .guide .t{font-size:12px;color:var(--text-secondary)}
-.wsaved{border:1px solid #e0b45c;background:#fdf6e7;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
+.wsaved{border:1px solid rgba(224,180,92,.7);background:rgba(224,180,92,.12);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
+.wst{display:block;font-weight:400;font-size:12px}
+.wst.ok{color:#2f7d4f} .wst.ng{color:#b8471f}
+:root[data-theme="dark"] .wst.ok{color:#6cc492} :root[data-theme="dark"] .wst.ng{color:#f08a63}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])) .wst.ok{color:#6cc492}
+  :root:where(:not([data-theme="light"])) .wst.ng{color:#f08a63}
+}
 .wsaved .btn{margin-top:8px}
 .guide .big{font-size:22px;font-weight:800;margin:2px 0}
 .guide .s{font-size:12.5px;color:var(--text-secondary);line-height:1.65}
@@ -297,6 +305,17 @@ body.mgr nav.tabs button.wtab,body.ro nav.tabs button.wtab{display:none}
 .timer .lbl{font-size:12.5px;color:var(--text-secondary);font-weight:650}
 .timer input{width:76px;text-align:right}
 .timer .cd{margin-left:auto;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+.timer .btn,.timer .lbl{white-space:nowrap}
+@media (max-width:350px){            /* 小さいスマホ（幅320など）でも数字が欠けないように */
+  .setrow{grid-template-columns:52px 1fr 22px 1fr 14px 28px;gap:4px}
+  .setrow.nw{grid-template-columns:52px 1fr 14px 28px}
+  .setrow .n{font-size:10.5px;white-space:nowrap;letter-spacing:-.02em}
+  .setrow input{padding-left:6px;padding-right:6px}
+  .setrow .del{width:28px;height:28px}
+  .timer{gap:6px;padding:10px}
+  .timer input{width:58px;padding-left:6px;padding-right:6px}
+  .timer .cd{font-size:22px}
+}
 .timer.ring{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,117,198,.25);animation:wring 1s ease-in-out 3}
 @keyframes wring{50%{background:rgba(0,117,198,.10)}}
 .done{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--neutral);margin-top:12px}
@@ -371,7 +390,8 @@ body.adm nav.tabs button.ao{display:flex}
 .urow .ui{font-size:11px;color:var(--muted);margin-top:1px}
 .urow .ur{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap;
   background:var(--chip);color:var(--text-secondary)}
-.urow .ur.adm{background:var(--accent);color:#fff}
+.urow .urole{width:auto;min-width:0;padding:6px 8px;font-size:12.5px;min-height:34px;flex:0 0 auto;max-width:42%}
+.ur.adm{background:var(--accent);color:#fff}
 
 #modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:none;
   align-items:center;justify-content:center;padding:20px}
@@ -548,7 +568,7 @@ body.adm nav.tabs button.ao{display:flex}
 <!-- ============ 投球 ============ -->
 <section class="panel" id="p-pitch">
   <div class="card ao">
-    <h2>自チームの投手<span class="hint">監督・コーチのみ</span></h2>
+    <h2>自チームの投手<span class="hint">トレーナーのみ</span></h2>
     <div class="row2">
       <div><label class="fld" for="armName">名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label><input id="armName" placeholder="例）橋本 大輔（間にスペース）"></div>
       <div><label class="fld">投げる手</label><div class="chips" id="armThrows">
@@ -688,7 +708,7 @@ body.adm nav.tabs button.ao{display:flex}
   </div>
 
   <div class="card" id="cardWNoSelf" style="display:none">
-    <div class="note" style="margin:0">あなたの選手データが見つかりません。監督・コーチに、アカウントと打者一覧の名前が同じか確かめてもらってください。</div>
+    <div class="note" style="margin:0">あなたの選手データが見つかりません。トレーナーに、アカウントと打者一覧の名前が同じか確かめてもらってください。</div>
   </div>
 
   <div class="card" id="cardWBw"><h2>体重<span class="hint">トレーニングの前に測って記録</span></h2>
@@ -697,7 +717,7 @@ body.adm nav.tabs button.ao{display:flex}
         <input type="number" id="wBwKg" inputmode="decimal" step="0.1" min="30" max="200"></div>
       <div style="flex:1;align-self:end"><button class="btn" id="wBwSave" type="button">記録</button></div>
     </div>
-    <div class="note" id="wBwNote">体重の数字とグラフは、本人と監督・コーチだけが見られます。</div>
+    <div class="note" id="wBwNote">体重の数字とグラフは、本人とトレーナー・監督・コーチだけが見られます。</div>
   </div>
 
   <div class="card" id="cardWRec">
@@ -730,7 +750,7 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="note">押すと、その種目の入力欄に出ます（直すときもここから）。</div></div>
 
   <div class="card" id="cardWAdmin" style="display:none">
-    <h2>選手の記録を見る・直す<span class="hint">監督・コーチ</span></h2>
+    <h2 id="wAdmTitle">選手の記録を見る・直す<span class="hint">トレーナー</span></h2>
     <label class="fld" for="wAdmPlayer">選手</label><select id="wAdmPlayer"></select>
     <div id="wAdmBody" style="margin-top:10px"></div>
   </div>
@@ -754,7 +774,7 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="card" id="cardWTrend"><h2 id="wTrTitle">自分の推移</h2>
       <div id="wTrPlayerRow"><label class="fld" for="wTrPlayer">選手</label><select id="wTrPlayer"></select></div>
       <div id="wTrend" style="margin-top:10px"></div>
-      <div class="note">ここは本人と監督・コーチだけが見られます。</div>
+      <div class="note">ここは本人とトレーナー・監督・コーチだけが見られます。</div>
     </div>
   </div>
 
@@ -944,7 +964,7 @@ body.adm nav.tabs button.ao{display:flex}
   </div>
 
   <div class="card ao" id="cardWCfg">
-    <h2>ウエイトの設定<span class="hint">監督・コーチ</span></h2>
+    <h2>ウエイトの設定<span class="hint">トレーナー</span></h2>
     <div class="opt"><span>回数の指示</span><span class="r chips" id="wCfgMode">
       <button class="chip mini" type="button" data-v="std" aria-pressed="true">標準 6〜8回</button>
       <button class="chip mini" type="button" data-v="vol" aria-pressed="false">ボリューム 10〜12回</button></span></div>
@@ -969,7 +989,8 @@ body.adm nav.tabs button.ao{display:flex}
       <div class="chips" id="auRole">
         <button class="chip" type="button" data-v="player" aria-pressed="true">選手</button>
         <button class="chip" type="button" data-v="manager" aria-pressed="false">マネージャー</button>
-        <button class="chip" type="button" data-v="admin" aria-pressed="false">監督・コーチ</button>
+        <button class="chip" type="button" data-v="coach" aria-pressed="false">監督・コーチ</button>
+        <button class="chip" type="button" data-v="admin" aria-pressed="false">トレーナー</button>
         <button class="chip" type="button" data-v="viewer" aria-pressed="false">閲覧のみ</button>
       </div>
 
@@ -1044,12 +1065,12 @@ body.adm nav.tabs button.ao{display:flex}
     <label class="fld" for="liPw" style="margin-top:11px">パスワード</label>
     <input type="password" id="liPw" autocomplete="current-password">
     <div class="btnrow"><button class="btn" id="liGo" type="button">ログイン</button></div>
-    <div class="note" id="loginNote">IDとパスワードは監督・コーチから受け取ってください。</div>
+    <div class="note" id="loginNote">IDとパスワードはトレーナーから受け取ってください。</div>
   </div>
 
   <div id="setupBody" style="display:none">
     <div class="note" style="margin:0 0 14px">
-      はじめての設定です。<b>監督・コーチのアカウント</b>を作ります。<br>
+      はじめての設定です。<b>トレーナーのアカウント</b>（すべて操作できる人）を作ります。<br>
       部員やほかのコーチは、このあとアプリの中から追加できます。
     </div>
     <label class="fld" for="suName">お名前<span style="font-weight:400;color:var(--muted)">（苗字と名前の間にスペースを入れてください）</span></label>
@@ -1324,7 +1345,9 @@ let DB = {players:[], games:[], pitchers:[], pas:[], arms:[], bf:[], inn:[], olu
 
 let ME = null;               // ログイン中の利用者
 let canWrite = null;         // 記録を書けるか
-let canAdmin = false;        // 監督・コーチか
+let canAdmin = false;        // トレーナーか（すべて操作できる）
+let isCoach  = false;        // 監督・コーチか（全部見られるが、直せない）
+function canSeeAll(){ return canAdmin || isCoach; }   // 全員分の細かい記録・体重・投球を見てよい
 let isManager = false;       // マネージャーか（結果だけ直せる）
 let storeReady = false;
 let lastSync = 0;
@@ -1394,11 +1417,16 @@ function queued(key, fn){
 }
 // 保存しても「どこまで読んだか」は進めない。進めると、その直前に他の人が保存した記録を
 // 読み飛ばしてしまう。読んだ位置は読み込み（load）の返事だけで進める。
+// ウエイトの記録と体重は、同じ選手の分を1件ずつ順番に送る（サーバーが最高記録を出し直すときに
+// 記録と体重を同時に書き換えて、古い値で上書きしないように）
+function qkey(coll, id){
+  return (coll === "wt" || coll === "bw") ? "w/" + String(id).split("-")[0] : coll + "/" + id;
+}
 async function put(coll, obj){
-  return queued(coll + "/" + obj.id, async () => { await api("put", {coll, obj}); });
+  return queued(qkey(coll, obj.id), async () => { await api("put", {coll, obj}); });
 }
 async function drop(coll, id){
-  return queued(coll + "/" + id, async () => { await api("del", {coll, id}); });
+  return queued(qkey(coll, id), async () => { await api("del", {coll, id}); });
 }
 
 function banner(html){
@@ -1420,6 +1448,20 @@ function applyPayload(d){
 async function syncNow(quiet){
   try{
     const d = await api("load" + (lastSync ? "&since=" + lastSync : ""));
+    // ログインしている間にトレーナーが権限を変えたら、画面もすぐ合わせる。
+    // 見てよい記録の範囲も変わるので、全部読み直す（前の権限で届いた記録は捨てる）。
+    if (d.me && ME && (d.me.role !== ME.role || d.me.name !== ME.name)){
+      const was = ME.role;
+      ME = {...ME, ...d.me}; setRoleFlags(ME); applyRole();
+      Object.assign(W, {sets:[], loadedId:null, dirty:false});
+      if (canAdmin) loadUsers();
+      lastSync = 0;
+      if (was !== ME.role){
+        banner(`権限が「${ROLE_LBL[ME.role] || ME.role}」に変わりました。`);
+        setTimeout(()=>banner(""), 8000);
+      }
+      return syncNow(true);
+    }
     applyPayload(d);
     storeReady = true;
     if (!quiet) banner("");
@@ -1476,8 +1518,8 @@ function myArms(){
     ? Number(a.userId) === Number(ME.id)
     : sameName(a.name, ME.name));
 }
-function canSeePitch(){    return canAdmin || isManager || myArms().length > 0; }
-function canSeeAllPitch(){ return canAdmin || isManager; }
+function canSeePitch(){    return canSeeAll() || isManager || myArms().length > 0; }
+function canSeeAllPitch(){ return canSeeAll() || isManager; }
 // 投球の分析を出すかどうか。選手は自分の投球だけ見られる。
 function applyPitchView(){
   const chip = document.querySelector('#statMode [data-v="pitch"]');
@@ -1490,7 +1532,8 @@ function applyRole(){
   document.body.classList.toggle("ro", canWrite === false);
   document.body.classList.toggle("adm", canAdmin === true);
   document.body.classList.toggle("mgr", isManager === true);
-  const wOff = isManager || canWrite === false;
+  document.body.classList.toggle("coach", isCoach === true);
+  const wOff = isManager || (canWrite === false && !isCoach);
   if ((!canAdmin && $("#p-data").classList.contains("on")) || (wOff && $("#p-weight").classList.contains("on"))){
     $$("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.p==="p-input")));
     $$("section.panel").forEach(s=>s.classList.toggle("on", s.id==="p-input"));
@@ -1502,13 +1545,14 @@ function applyRole(){
   if (!sn) return;
   sn.innerHTML = canAdmin
     ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
-      + "・<b>監督・コーチ</b>：すべて操作できます（ウエイトは選手の記録を直す・消すことができ、新しく入れるのは本人だけです）<br>"
+      + "・<b>トレーナー</b>：すべて操作できます（ウエイトは選手の記録を直す・消すことができ、新しく入れるのは本人だけです。打者の一覧に自分を登録すると、自分のウエイトも記録できます）<br>"
+      + "・<b>監督・コーチ</b>：全選手の打撃・投球の分析、ウエイトの細かい記録と体重まで、すべて<b>見られます</b>。記録・修正・削除はできません<br>"
       + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。<b>投球データの記録・修正・削除</b>と試合の追加ができます。打席は<b>結果だけ</b>直せます（コースや球種は直せません。打席の新規記録や削除はできません）。ウエイトはランキングだけ見られます<br>"
-      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます。ウエイトと体重は<b>自分の分だけ</b>記録でき、細かい記録と体重は本人と監督・コーチだけが見られます<br>"
+      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます。ウエイトと体重は<b>自分の分だけ</b>記録でき、細かい記録と体重は本人とトレーナー・監督・コーチだけが見られます<br>"
       + "・<b>閲覧のみ</b>：分析を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
-const ROLE_LBL = {admin:"監督・コーチ", manager:"マネージャー", player:"選手", viewer:"閲覧のみ"};
+const ROLE_LBL = {admin:"トレーナー", coach:"監督・コーチ", manager:"マネージャー", player:"選手", viewer:"閲覧のみ"};
 
 /* ============================================================
    画面の状態
@@ -1613,7 +1657,7 @@ function myPlayers(){
   const linked = DB.players.filter(p => p.userId != null && String(p.userId) === String(ME.id));
   return linked.length ? linked : DB.players.filter(p => p.userId == null && sameName(p.name, ME.name));
 }
-// 選手は自分の打席だけ記録・削除できる（マネージャー、監督・コーチは別）
+// 選手は自分の打席だけ記録・削除できる（マネージャー、トレーナーは別）
 function onlyMine(){ return !!ME && ME.role === "player"; }
 function renderPlayers(){
   const sel = $("#selPlayer");
@@ -1623,7 +1667,7 @@ function renderPlayers(){
   if (nm){
     nm.style.display = onlyMine() ? "" : "none";
     nm.innerHTML = noSelf
-      ? "あなたの選手データが見つかりません。監督・コーチに、アカウントと打者一覧の名前が同じか確かめてもらってください。"
+      ? "あなたの選手データが見つかりません。トレーナーに、アカウントと打者一覧の名前が同じか確かめてもらってください。"
       : "記録・削除できるのは自分の打席だけです。";
   }
   const card = $("#cardPA");
@@ -1649,8 +1693,9 @@ function renderPlayerList(){
   if (!DB.players.length){ host.innerHTML = '<div class="empty-note">まだ登録がありません</div>'; return; }
   host.innerHTML = '<div class="palist">' + DB.players.map(p=>{
     const n = DB.pas.filter(x=>x.playerId===p.id).length;
-    const u = USERS.find(x=>String(x.id)===String(p.userId||""));
-    const acct = u ? `・ログイン ${esc(u.login)}` : "・ログインなし";
+    const u = p.userId != null ? USERS.find(x=>String(x.id)===String(p.userId))
+                               : USERS.find(x=>sameName(x.name, p.name));
+    const acct = u ? `・ログイン ${esc(u.login)}${u.role !== "player" ? `（${ROLE_LBL[u.role] || u.role}）` : ""}` : "・ログインなし";
     return `<div class="pa"><div class="bd"><div class="t">${esc(p.name)}</div>
       <div class="s">${BATS[p.bats]}・${n}打席${acct}</div></div>
       <button class="del" data-del="${p.id}" type="button" aria-label="削除">✕</button></div>`;
@@ -2727,7 +2772,7 @@ function loginErr(msg){
   if (msg){ e.textContent = msg; e.classList.add("on"); } else { e.classList.remove("on"); }
 }
 function showLogin(msg){
-  ME = null; canWrite = null; canAdmin = false; isManager = false; storeReady = false;
+  ME = null; canWrite = null; canAdmin = false; isCoach = false; isManager = false; storeReady = false;
   setToken(null);
   USERS = [];
   COLLS.forEach(c => CACHE[c] = {}); rebuild(); lastSync = 0;
@@ -2745,11 +2790,15 @@ function showLogin(msg){
   banner("");
   setTimeout(()=>{ ($("#liId").value ? $("#liPw") : $("#liId")).focus(); }, 80);
 }
+function setRoleFlags(u){
+  canAdmin  = (u.role === "admin");
+  isCoach   = (u.role === "coach");
+  isManager = (u.role === "manager");
+  canWrite  = (u.role !== "viewer" && u.role !== "coach");
+}
 function afterLogin(u){
   ME = u;
-  canAdmin  = (u.role === "admin");
-  isManager = (u.role === "manager");
-  canWrite  = (u.role !== "viewer");
+  setRoleFlags(u);
   $("#login").classList.remove("on");
   loginErr("");
   $("#liPw").value = "";
@@ -2765,7 +2814,7 @@ function afterLogin(u){
 }
 // ログイン中の人の打者記録があれば、最初からそれを選んでおく
 function pickMyPlayer(){
-  if (!ME) return;
+  if (!ME || ME.role !== "player") return;   // トレーナーは自分を打者登録していても、ほかの選手を入れることが多いので選ばない
   const mine = myPlayers()[0];
   if (!mine){ if (onlyMine()){ renderPlayers(); renderAll(); } return; }
   ST.playerId = mine.id; F.player = mine.id;
@@ -2799,7 +2848,7 @@ async function boot(){
   }
 }
 
-/* ---- 初回だけ：最初の監督・コーチを作る ---- */
+/* ---- 初回だけ：最初のトレーナーを作る ---- */
 function showSetup(){
   $("#login").classList.add("on");
   $("#loginBody").style.display = "none";
@@ -2860,7 +2909,7 @@ $("#mLogout").addEventListener("click", async ()=>{
   showLogin("");
 });
 
-/* ---- アカウント管理（監督・コーチのみ） ---- */
+/* ---- アカウント管理（トレーナーのみ） ---- */
 let USERS = [];
 async function loadUsers(){
   if (!canAdmin) return;
@@ -2875,10 +2924,27 @@ function renderUsers(){
     return `<div class="urow"><div class="ub">
       <div class="un">${esc(u.name)}${me ? '<span class="dim">（自分）</span>' : ''}</div>
       <div class="ui">ID: ${esc(u.login)}</div></div>
-      <span class="ur ${u.role==="admin"?"adm":""}">${ROLE_LBL[u.role]||u.role}</span>
+      ${me ? `<span class="ur adm">${ROLE_LBL[u.role]||u.role}</span>`
+           : `<select class="urole" data-urole="${u.id}" aria-label="${esc(u.name)}さんの権限">`
+             + ["player","manager","coach","admin","viewer"].map(r=>pOpt(r, ROLE_LBL[r], u.role)).join("") + `</select>`}
       ${me ? "" : `<button class="del" data-u="${u.id}" type="button" aria-label="削除">✕</button>`}
       </div>`;
   }).join("");
+  // 権限を変える（自分の権限は変えられない）
+  host.querySelectorAll("[data-urole]").forEach(sel=>{
+    sel.addEventListener("change", async ()=>{
+      const u = USERS.find(x=>String(x.id)===sel.dataset.urole), to = sel.value;
+      const extra = to === "admin" ? "\nトレーナーは、すべての記録の修正・削除とアカウントの管理ができます。"
+                  : to === "coach" ? "\n監督・コーチは、全部見られますが、記録・修正・削除はできません。"
+                  : to === "player" ? "\n打者の一覧にも登録されます（右打ちで登録。あとで直せます）。" : "";
+      if (!await ask(`${u.name} さんの権限を「${ROLE_LBL[u.role]}」から「${ROLE_LBL[to]}」に変えます。よろしいですか？${extra}`)){
+        sel.value = u.role; return;
+      }
+      try{ await api("userRole", {id:Number(u.id), role:to}); await loadUsers(); await syncNow(true);
+           note("auNote", `${u.name} さんの権限を「${ROLE_LBL[to]}」にしました。次に画面を開いたときから変わります。`); }
+      catch(e){ sel.value = u.role; await tell(e.message); }
+    });
+  });
   host.querySelectorAll("[data-u]").forEach(b=>{
     b.addEventListener("click", async ()=>{
       const u = USERS.find(x=>String(x.id)===b.dataset.u);
@@ -2895,7 +2961,7 @@ chipGroup("#auRole", v=>{
   if (isPlayer) $("#auAlsoPlayer").setAttribute("aria-pressed","false");
 });
 chipGroup("#auBats", ()=>{});
-// 監督・コーチや閲覧のみでも、本人の打撃データを取りたい場合
+// トレーナーや監督・コーチでも、本人の打撃データ（ウエイトも）を取りたい場合
 $("#auAlsoPlayer").addEventListener("click", ()=>{
   const b = $("#auAlsoPlayer");
   const on = b.getAttribute("aria-pressed") === "true";
@@ -3120,7 +3186,10 @@ function buildBFResults(){
 }
 function renderArms(){
   const host = $("#armList"); if(!host) return;
-  const accs = USERS.filter(u=>u.role==="player");
+  // 選手のアカウントに加えて、打者の一覧に登録されているトレーナーなど（選手としても登録している人）も選べる
+  const isBatter = u => DB.players.some(p => p.userId != null ? String(p.userId) === String(u.id) : sameName(p.name, u.name));
+  const accs = USERS.filter(u => u.role === "player" || isBatter(u));
+  const accLbl = u => u.role === "player" ? u.name : `${u.name}（${ROLE_LBL[u.role] || u.role}）`;
   host.innerHTML = DB.arms.length
     ? DB.arms.map(a=>{
         const hit  = accs.find(u=>sameName(u.name, a.name));
@@ -3132,10 +3201,10 @@ function renderArms(){
         + `選んだ人だけが、自分の投球分析を見られます</span></label>`
         + `<select data-armuser="${a.id}">`
         + `<option value=""${a.userId==null?" selected":""}>`
-        + `${auto ? `自動：${esc(hit.name)}（名前が同じ）`
+        + `${auto ? `自動：${esc(accLbl(hit))}（名前が同じ）`
                   : (accs.length ? "決めない（本人は見られません）"
-                                 : "選手のアカウントがありません")}</option>`
-        + accs.map(u=>pOpt(u.id, u.name, a.userId==null?"":a.userId)).join("")
+                                 : "選べるアカウントがありません（選手のアカウントを作ると出ます）")}</option>`
+        + accs.map(u=>pOpt(u.id, accLbl(u), a.userId==null?"":a.userId)).join("")
         + `</select></div>`
         + `<button class="del ao" data-delarm="${a.id}" type="button" aria-label="削除">✕</button></div>`;
       }).join("")
@@ -3177,7 +3246,7 @@ function renderPSelectors(){
   $("#pCtx").innerHTML = (g && a)
     ? `<b>${esc(a.name)}</b>（${THROW_LBL[a.throws]}）が <b>${esc(g.opponent||"")}</b> の <b>${PST.inning}回</b>`
       + `　<b style="color:${ou>=3?"#b8471f":"inherit"}">${ou}アウト</b>`
-    : "試合と投手を選んでください。投手の登録は監督・コーチが行います。";
+    : "試合と投手を選んでください。投手の登録はトレーナーが行います。";
   const oh = $("#innOutsHint");
   if (oh) oh.innerHTML = ou >= 3
     ? '<b style="color:#b8471f">3アウト（この回は終わりです）</b>'
@@ -3949,8 +4018,8 @@ $("#btnPReset").addEventListener("click", ()=>{ PF.recent=PF.opp=""; renderPStat
 
 /* ============================================================
    ウエイトトレーニング
-   ・記録（wt）と体重（bw）は本人だけが入れる。監督・コーチは直す・消すことができる
-   ・細かい記録と体重は、本人と監督・コーチにだけ届く（サーバーで絞っている）
+   ・記録（wt）と体重（bw）は本人だけが入れる。トレーナーは直す・消すことができる
+   ・細かい記録と体重は、本人とトレーナー・監督・コーチにだけ届く（サーバーで絞っている）
    ・ランキングに使う最高記録（wbest）はサーバーが自動で作り、全員に届く
    ============================================================ */
 const WEX = [
@@ -4032,10 +4101,10 @@ let wRkEx = "bench", wRkMode = "max";
 /* ---- トレーナーからの指示 ---- */
 function renderWInstr(){
   const c = wcfg(), m = WMODE[c.mode] || WMODE.std;
-  $("#wInstr").innerHTML =
+  setHTML($("#wInstr"),
       `<div class="b"><div class="k">回数</div><div class="v">${m.label}</div></div>`
     + `<div class="b"><div class="k">セット数</div><div class="v">${c.sets}セット</div></div>`
-    + `<div class="b"><div class="k">休憩の目安</div><div class="v">${m.restLbl}</div></div>`;
+    + `<div class="b"><div class="k">休憩の目安</div><div class="v">${m.restLbl}</div></div>`);
   note("wInstrNote", canAdmin ? "指示はデータタブの「ウエイトの設定」で切り替えます。" : "");
 }
 
@@ -4057,7 +4126,10 @@ function wExLabel(e){
 }
 
 /* ---- その日・その種目の記録を入力欄に出す ---- */
-function wMe(){ return myPlayers()[0] || null; }
+// ウエイトを自分で記録できるのは、選手とトレーナー（打者として登録している人）だけ
+// 中身が変わったときだけ描き直す（同期のたびに作り直すと、押しかけたボタンや欄が入れ替わってしまう）
+function setHTML(el, html){ if (!el || el._h === html) return; el.innerHTML = html; el._h = html; }
+function wMe(){ return ME && (ME.role === "player" || ME.role === "admin") ? (myPlayers()[0] || null) : null; }
 function loadWForm(){
   const me = wMe(); if (!me) return;
   const id = wtId(me.id, W.date, W.ex), rec = CACHE.wt[id];
@@ -4128,12 +4200,12 @@ function renderWSets(){
     : (ex.noW ? `<span style="font-weight:400;color:var(--muted)">（自重・回数だけ）</span>`
               : `<span style="font-weight:400;color:var(--muted)">（${fw ? fmtKg(Number(fw)) + "で" : "重さ未設定"}・回数だけ）</span>`));
   const hasW = ex.kind === "w" || ex.kind === "o";
-  $("#wSets").innerHTML = W.sets.map((s,i)=>
+  setHTML($("#wSets"), W.sets.map((s,i)=>
     `<div class="setrow${hasW ? "" : " nw"}"><span class="n">${i+1}セット目</span>`
     + (hasW ? `<input type="number" inputmode="decimal" step="0.25" min="0" data-wi="${i}" data-k="w" value="${esc(s.w)}" placeholder="重さ" aria-label="${i+1}セット目の重さ"><span class="x">kg×</span>` : "")
     + `<input type="number" inputmode="numeric" step="1" min="1" data-wi="${i}" data-k="r" value="${esc(s.r)}" placeholder="回数" aria-label="${i+1}セット目の回数"><span class="u">回</span>`
     + (W.sets.length > 1 ? `<button class="del" type="button" data-wdel="${i}" aria-label="このセットを消す">✕</button>` : `<span></span>`)
-    + `</div>`).join("");
+    + `</div>`).join(""));
 }
 function wReadSets(){
   const ex = WEXM[W.ex], c = wcfg(), out = [], errs = [];
@@ -4178,7 +4250,7 @@ async function wSave(){
   $("#wSave").disabled = true;
   try{
     await put("wt", rec); CACHE.wt[id] = rec; rebuild();
-    W.loadedId = id;
+    W.loadedId = id; W.savedHere = id;
     wShowDone(rec, others);
     note("wNote", old ? "直しました。" : "保存しました。");
     renderWeight();
@@ -4285,9 +4357,9 @@ function renderWeight(){
   const me = wMe();
   const recCards = ["#cardWRec","#cardWToday","#cardWBw"];
   recCards.forEach(s=>$(s).style.display = me ? "" : "none");
-  $("#cardWNoSelf").style.display = (!me && !canAdmin) ? "" : "none";
-  $("#cardWAdmin").style.display = canAdmin ? "" : "none";
-  if (canAdmin) renderWAdmin();
+  $("#cardWNoSelf").style.display = (!me && !canSeeAll()) ? "" : "none";
+  $("#cardWAdmin").style.display = canSeeAll() ? "" : "none";
+  if (canSeeAll()) renderWAdmin();
   if (!me) return;
   if (!W.date) W.date = todayLocal();
   $("#wDate").value = W.date;
@@ -4299,12 +4371,13 @@ function renderWeight(){
   // まだ何も打っていなければ、毎回いまの記録から入れ直す（過去の記録を直したあとも、重さの目安が新しくなる）
   if (!W.sets.length || !W.dirty) loadWForm();
   const g = wGuideOf(me.id, W.ex, W.date);
-  $("#wGuide").innerHTML = g.html; $("#wGuide").style.display = "block";
+  setHTML($("#wGuide"), g.html); $("#wGuide").style.display = "block";
   renderWSets();
   // 保存済みの日を開いたとき、記録の重さが今日の目安より軽ければ知らせる（勝手には書き換えない）
   const sn = $("#wSavedNote"), exw = WEXM[W.ex];
   const curW = Math.max(0, ...W.sets.map(x=>Number(x.w)).filter(v=>v>0));
-  if (W.loadedId && exw.kind === "w" && g.today != null && curW > 0 && curW < g.today){
+  // いま自分で保存したばかりの記録には出さない（軽めの重さを選んだときにしつこく出さないため）
+  if (W.loadedId && W.loadedId !== W.savedHere && exw.kind === "w" && g.today != null && curW > 0 && curW < g.today){
     sn.innerHTML = `この日は保存済みの記録（${fmtKg(curW)}）を出しています。`
       + `前の日の記録から出した今日の重量は <b>${fmtKg(g.today)}</b> です。`
       + `<br><button class="btn sec mini" type="button" id="wUseGuide">重さを ${fmtKg(g.today)} に入れ替える</button>`
@@ -4323,20 +4396,19 @@ function renderWeight(){
   const day = DB.wt.filter(r=>r.playerId===me.id && r.date===W.date)
     .sort((a,b)=>WEX.findIndex(e=>e.id===a.ex) - WEX.findIndex(e=>e.id===b.ex));
   $("#wTodayTitle").textContent = `${fmtMD(W.date)}の記録`;
-  $("#wTodayList").innerHTML = day.length
+  setHTML($("#wTodayList"), day.length
     ? '<div class="palist">' + day.map(r=>{
         const ex = WEXM[r.ex] || {name:r.ex};
         const v = ex.kind === "w" && wEst(r) != null ? fmtKg(wFloor(wEst(r), ex.step)) : (ex.kind === "r" ? wReps(r) + "回" : "");
         return `<div class="pa"><div class="bd" data-wopen="${r.ex}"><div class="t">${esc(ex.name)}</div>`
           + `<div class="s">${esc(wSetsText(r))}${v ? "　→ " + (ex.kind === "w" ? "推定MAX " : "最高 ") + v : ""}</div></div></div>`;
       }).join("") + "</div>"
-    : '<div class="empty-note">この日の記録はまだありません</div>';
+    : '<div class="empty-note">この日の記録はまだありません</div>');
   // 体重
   const bws = bwOf(me.id), today = bws.find(x=>x.date===W.date), last = bws[bws.length-1];
   if (!(W.bwDraft && W.bwDraft.date === W.date)) $("#wBwKg").value = today ? today.kg : "";   // 打ちかけは残す
   $("#wBwLbl").innerHTML = `${W.date === todayLocal() ? "今日" : fmtMD(W.date)}の体重（kg）`
-    + (today ? '<span style="display:block;font-weight:400;font-size:12px;color:#2f7d4f">✓ 記録済み</span>'
-             : '<span style="display:block;font-weight:400;font-size:12px;color:#b8471f">まだ記録していません</span>');
+    + (today ? '<span class="wst ok">✓ 記録済み</span>' : '<span class="wst ng">まだ記録していません</span>');
   $("#wBwKg").placeholder = last ? `前回 ${last.kg}kg（${fmtMD(last.date)}）` : "例）68.5";
 }
 async function wBwSave(){
@@ -4347,12 +4419,12 @@ async function wBwSave(){
   const id = bwId(me.id, W.date), old = CACHE.bw[id];
   const rec = {...(old||{}), id, playerId: me.id, date: W.date, kg: Math.round(kg*10)/10, ts: old ? old.ts : Date.now()};
   try{ await put("bw", rec); CACHE.bw[id] = rec; rebuild(); W.bwDraft = null; renderWeight();
-       note("wBwNote", `${fmtMD(W.date)}の体重を${old ? "直しました" : "記録しました"}（${rec.kg}kg）。体重の数字とグラフは、本人と監督・コーチだけが見られます。`);
+       note("wBwNote", `${fmtMD(W.date)}の体重を${old ? "直しました" : "記録しました"}（${rec.kg}kg）。体重の数字とグラフは、本人とトレーナー・監督・コーチだけが見られます。`);
        syncNow(true); }
   catch(e){ writeFailed(e); }
 }
 
-/* ---- 監督・コーチ：選手の記録を見る・直す ---- */
+/* ---- トレーナー：選手の記録を見る・直す（監督・コーチは見るだけ） ---- */
 function wPlayersWithData(){
   const ids = new Set([...DB.wt.map(r=>r.playerId), ...DB.bw.map(r=>r.playerId)]);
   return DB.players.filter(p=>ids.has(p.id)).sort((a,b)=>a.name.localeCompare(b.name,"ja"));
@@ -4361,10 +4433,12 @@ function renderWAdmin(){
   const list = wPlayersWithData(), sel = $("#wAdmPlayer");
   if (!list.some(p=>p.id===W.admPid)) W.admPid = list.length ? list[0].id : null;
   sel.innerHTML = list.length ? list.map(p=>pOpt(p.id, p.name, W.admPid)).join("") : '<option value="">まだ記録がありません</option>';
-  renderWTrend("wAdmBody", W.admPid, true);
+  $("#wAdmTitle").innerHTML = canAdmin ? '選手の記録を見る・直す<span class="hint">トレーナー</span>'
+                                        : '選手の記録を見る<span class="hint">監督・コーチは見るだけです</span>';
+  renderWTrend("wAdmBody", W.admPid, canAdmin);
 }
 
-/* ---- 推移（グラフと記録の一覧）：本人と監督・コーチだけ ---- */
+/* ---- 推移（グラフと記録の一覧）：本人とトレーナー・監督・コーチだけ ---- */
 const WTR = {};     // 表示先ごとの状態（選んでいる種目・直している記録）
 function wNiceTicks(lo, hi){
   if (lo === hi){ lo -= 1; hi += 1; }
@@ -4454,7 +4528,7 @@ function renderWTrend(hostId, pid, editable){
     + `<div class="ngl" style="margin-top:12px">記録</div>`
     + (recs.length ? `<div class="scrollx"><table class="hist"><thead><tr><th>日付</th><th>セット${ex.kind === "w" || ex.kind === "o" ? "（kg×回）" : ""}</th><th class="r">${ex.kind === "w" ? "推定MAX" : (ex.kind === "r" ? "最高" : "重さ")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
                    : '<div class="empty-note">この種目の記録はまだありません</div>')
-    + `<div class="ngl" style="margin-top:16px">体重（kg）<span style="font-weight:400">　本人と監督・コーチだけが見られます</span></div>`
+    + `<div class="ngl" style="margin-top:16px">体重（kg）<span style="font-weight:400">　本人とトレーナー・監督・コーチだけが見られます</span></div>`
     + wChart(bws.map(b=>[b.date, Number(b.kg)]), "kg")
     + (bws.length ? `<div class="scrollx"><table class="hist"><tbody>${bwRows}</tbody></table></div>` : "");
   // 操作
@@ -4568,14 +4642,14 @@ function renderWRank(){
 function renderWStats(){
   renderWRank();
   const me = wMe(), card = $("#cardWTrend");
-  if (canAdmin){
+  if (canSeeAll()){
     card.style.display = "";
     $("#wTrTitle").textContent = "選手の推移";
     $("#wTrPlayerRow").style.display = "";
     const list = wPlayersWithData();
     if (!list.some(p=>p.id===W.trPid)) W.trPid = (me && list.some(p=>p.id===me.id)) ? me.id : (list[0] ? list[0].id : null);
     $("#wTrPlayer").innerHTML = list.length ? list.map(p=>pOpt(p.id, p.name, W.trPid)).join("") : '<option value="">まだ記録がありません</option>';
-    renderWTrend("wTrend", W.trPid, true);
+    renderWTrend("wTrend", W.trPid, canAdmin);       // 監督・コーチは見るだけ
   } else if (me && ME && ME.role === "player"){
     card.style.display = "";
     $("#wTrTitle").textContent = "自分の推移";
@@ -4586,7 +4660,7 @@ function renderWStats(){
   }
 }
 
-/* ---- 設定（監督・コーチ） ---- */
+/* ---- 設定（トレーナー） ---- */
 let wCfgDraft = null;
 function renderWCfg(){
   if (!$("#cardWCfg")) return;
@@ -4616,6 +4690,7 @@ $("#wBwKg").addEventListener("input", e=>{ W.bwDraft = {date: W.date}; });
 $("#wSets").addEventListener("input", e=>{
   const t = e.target; if (!t.dataset.wi) return;
   W.sets[+t.dataset.wi][t.dataset.k] = t.value; W.dirty = true;
+  $("#wSets")._h = null;      // 画面の数字が手で変わったので、次は必ず描き直す
 });
 $("#wSets").addEventListener("click", e=>{
   const b = e.target.closest("[data-wdel]"); if (!b) return;
