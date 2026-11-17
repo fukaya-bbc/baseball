@@ -282,6 +282,8 @@ body.mgr nav.tabs button.wtab,body.ro nav.tabs button.wtab{display:none}
 .instr .k{font-size:11px;color:var(--muted);font-weight:650}.instr .v{font-size:15px;font-weight:700;margin-top:2px}
 .guide{border:1px solid rgba(0,117,198,.35);background:rgba(0,117,198,.06);border-radius:12px;padding:10px 12px;margin-top:12px}
 .guide .t{font-size:12px;color:var(--text-secondary)}
+.wsaved{border:1px solid #e0b45c;background:#fdf6e7;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
+.wsaved .btn{margin-top:8px}
 .guide .big{font-size:22px;font-weight:800;margin:2px 0}
 .guide .s{font-size:12.5px;color:var(--text-secondary);line-height:1.65}
 .setrow{display:grid;grid-template-columns:64px 1fr 30px 1fr 18px 32px;gap:6px;align-items:center;margin-top:8px}
@@ -689,12 +691,22 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="note" style="margin:0">あなたの選手データが見つかりません。監督・コーチに、アカウントと打者一覧の名前が同じか確かめてもらってください。</div>
   </div>
 
+  <div class="card" id="cardWBw"><h2>体重<span class="hint">トレーニングの前に測って記録</span></h2>
+    <div class="row">
+      <div style="flex:2"><label class="fld" for="wBwKg"><span id="wBwLbl">今日の体重（kg）</span></label>
+        <input type="number" id="wBwKg" inputmode="decimal" step="0.1" min="30" max="200"></div>
+      <div style="flex:1;align-self:end"><button class="btn" id="wBwSave" type="button">記録</button></div>
+    </div>
+    <div class="note" id="wBwNote">体重の数字とグラフは、本人と監督・コーチだけが見られます。</div>
+  </div>
+
   <div class="card" id="cardWRec">
     <h2 id="wRecTitle">記録する</h2>
     <label class="fld" for="wDate">日付</label><input type="date" id="wDate">
     <label class="fld" style="margin-top:12px">種目</label>
     <div id="wExList"></div>
     <div class="guide" id="wGuide" style="display:none"></div>
+    <div class="wsaved" id="wSavedNote" style="display:none"></div>
     <label class="fld" style="margin-top:14px" id="wSetsLbl">セット</label>
     <div id="wSets"></div>
     <div class="btnrow"><button class="btn sec mini" id="wAddSet" type="button">＋ セットを追加</button></div>
@@ -716,15 +728,6 @@ body.adm nav.tabs button.ao{display:flex}
 
   <div class="card" id="cardWToday"><h2 id="wTodayTitle">この日の記録</h2><div id="wTodayList"></div>
     <div class="note">押すと、その種目の入力欄に出ます（直すときもここから）。</div></div>
-
-  <div class="card" id="cardWBw"><h2>体重</h2>
-    <div class="row">
-      <div style="flex:2"><label class="fld" for="wBwKg">体重（kg）<span style="font-weight:400;color:var(--muted)">上の日付で記録</span></label>
-        <input type="number" id="wBwKg" inputmode="decimal" step="0.1" min="30" max="200"></div>
-      <div style="flex:1;align-self:end"><button class="btn" id="wBwSave" type="button">記録</button></div>
-    </div>
-    <div class="note" id="wBwNote">体重の数字とグラフは、本人と監督・コーチだけが見られます。</div>
-  </div>
 
   <div class="card" id="cardWAdmin" style="display:none">
     <h2>選手の記録を見る・直す<span class="hint">監督・コーチ</span></h2>
@@ -2488,10 +2491,10 @@ const SAMPLE_ARMS = [
 // ウエイトのサンプル：見本の打者4人に、12週間ぶんの記録と体重を付ける（重量は下げない進め方）
 function sampleWeight(bats, rnd, S){
   const prof = [   // 1RMの出発点（kg）と体重
-    {bench:62, dead:105, row:58, squat:92, bulg:36, chin:9,  hlr:10, situp:22, rear:14, bw:68},
-    {bench:50, dead:88,  row:48, squat:78, bulg:30, chin:12, hlr:13, situp:26, rear:16, bw:63},
-    {bench:72, dead:120, row:66, squat:108,bulg:42, chin:6,  hlr:8,  situp:18, rear:12, bw:76},
-    {bench:45, dead:80,  row:44, squat:70, bulg:28, chin:14, hlr:15, situp:30, rear:18, bw:60}
+    {bench:62, dead:105, row:58, squat:92, bulg:36, chin:9,  hlr:10, situp:22, rear:9,  bw:68},
+    {bench:50, dead:88,  row:48, squat:78, bulg:30, chin:12, hlr:13, situp:26, rear:11, bw:63},
+    {bench:72, dead:120, row:66, squat:108,bulg:42, chin:6,  hlr:8,  situp:18, rear:8,  bw:76},
+    {bench:45, dead:80,  row:44, squat:70, bulg:28, chin:14, hlr:15, situp:30, rear:12, bw:60}
   ];
   const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2512,7 +2515,7 @@ function sampleWeight(bats, rnd, S){
           if (r1 >= 8 && r2 >= 8) w += e.step;                          // 2セットとも8回でUP（下げない）
         } else if (e.kind === "r"){
           const top = Math.round(P[e.id] + k * .5 + rnd()*2);
-          const fw = e.fixed ? (e.fixed === "situp" ? 5 : 2) : null;
+          const fw = e.fixed ? (e.fixed === "situp" ? 5 : 20) : null;
           sets = [{w:fw, r:top}, {w:fw, r:Math.max(1, top - 1 - ((rnd()*3)|0))}];
         } else {
           sets = [{w:10, r:12}, {w:10, r:12}];
@@ -3970,10 +3973,13 @@ const WMODE = {
   std:{lo:6,  hi:8,  rest:120, label:"標準 6〜8回",        restLbl:"2分"},
   vol:{lo:10, hi:12, rest:90,  label:"ボリューム 10〜12回", restLbl:"90秒"}
 };
-const WCFG_DEF = {id:"team", mode:"std", sets:2, fixed:{situp:5, rear:null}};
+const WCFG_DEF = {id:"team", mode:"std", sets:2, fixed:{situp:5, rear:20}};   // シットアップ5kg・リアレイズ20kg
 function wcfg(){
   const c = DB.wcfg.find(x=>x.id==="team") || {};
-  return {...WCFG_DEF, ...c, fixed:{...WCFG_DEF.fixed, ...(c.fixed||{})}};
+  // 設定で空にした重さは、決まりの重さ（シットアップ5kg・リアレイズ20kg）に戻す
+  const fx = {...WCFG_DEF.fixed};
+  Object.entries(c.fixed || {}).forEach(([k,v])=>{ if (v != null && v !== "") fx[k] = v; });
+  return {...WCFG_DEF, ...c, fixed: fx};
 }
 function wEst(rec){
   let best = null;
@@ -4020,7 +4026,7 @@ function wSetsText(rec){
 }
 
 /* ---- 画面の状態 ---- */
-const W = { ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null };
+const W = { ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null, dirty:false };
 let wRkEx = "bench", wRkMode = "max";
 
 /* ---- トレーナーからの指示 ---- */
@@ -4055,7 +4061,7 @@ function wMe(){ return myPlayers()[0] || null; }
 function loadWForm(){
   const me = wMe(); if (!me) return;
   const id = wtId(me.id, W.date, W.ex), rec = CACHE.wt[id];
-  W.loadedId = rec ? id : null;
+  W.loadedId = rec ? id : null; W.dirty = false;
   if (rec){ W.sets = rec.sets.map(s=>({w: s.w == null ? "" : String(s.w), r: String(s.r)})); return; }
   const c = wcfg(), g = wGuideOf(me.id, W.ex, W.date), ex = WEXM[W.ex];
   const w0 = ex.kind === "w" ? (g.today != null ? String(g.today) : "")
@@ -4080,12 +4086,19 @@ function wGuideOf(pid, exId, date){
       out.today = wFloor(best * WPCT[m.lo], ex.step);
       line = `今日の重量：<b>${fmtKg(out.today)}</b>（指示が「${m.label}」に変わったので、推定MAXから出した重さです）`;
     } else {
-      const u = wUp(prev);
+      // 重量は下げない：同じ指示のときの記録の中で、いちばん重い「次の重量」を使う。
+      // 前の日の記録を重く直したときも、それより後の日はその重さから出す。
+      let src = prev, u = wUp(prev);
+      before.forEach(r=>{
+        if ((r.mode || "std") !== c.mode) return;
+        const v = wUp(r); if (v && (!u || v.next > u.next)){ u = v; src = r; }
+      });
       if (u){
         out.today = u.next;
-        const reps = prev.sets.filter(s=>Number(s.w)===u.work).map(s=>s.r+"回").join("・");
-        line = `今日の重量：<b>${fmtKg(u.next)}</b>（前回 ${fmtKg(u.work)} で ${reps} → `
+        const reps = src.sets.filter(s=>Number(s.w)===u.work).map(s=>s.r+"回").join("・");
+        line = `今日の重量：<b>${fmtKg(u.next)}</b>（${src === prev ? "前回" : fmtMD(src.date) + "に"} ${fmtKg(u.work)} で ${reps} → `
           + (u.up ? `${u.need}セットとも${u.hi}回できたのでUP）` : `まだUPしない）`)
+          + (src === prev ? "" : `<br>前回（${fmtMD(prev.date)}）より重い記録があるので、そちらを基準にしています。`)
           + `<br>${c.sets}セットとも${m.hi}回できたら、次回は <b>${fmtKg(u.next + ex.step)}</b> にUPです。`;
       }
     }
@@ -4283,10 +4296,25 @@ function renderWeight(){
     b.textContent = wExLabel(WEXM[b.dataset.ex]);
     b.setAttribute("aria-pressed", String(b.dataset.ex === W.ex));
   });
-  if (!W.sets.length) loadWForm();
+  // まだ何も打っていなければ、毎回いまの記録から入れ直す（過去の記録を直したあとも、重さの目安が新しくなる）
+  if (!W.sets.length || !W.dirty) loadWForm();
   const g = wGuideOf(me.id, W.ex, W.date);
   $("#wGuide").innerHTML = g.html; $("#wGuide").style.display = "block";
   renderWSets();
+  // 保存済みの日を開いたとき、記録の重さが今日の目安より軽ければ知らせる（勝手には書き換えない）
+  const sn = $("#wSavedNote"), exw = WEXM[W.ex];
+  const curW = Math.max(0, ...W.sets.map(x=>Number(x.w)).filter(v=>v>0));
+  if (W.loadedId && exw.kind === "w" && g.today != null && curW > 0 && curW < g.today){
+    sn.innerHTML = `この日は保存済みの記録（${fmtKg(curW)}）を出しています。`
+      + `前の日の記録から出した今日の重量は <b>${fmtKg(g.today)}</b> です。`
+      + `<br><button class="btn sec mini" type="button" id="wUseGuide">重さを ${fmtKg(g.today)} に入れ替える</button>`
+      + `<div style="color:var(--muted);font-size:12px;margin-top:4px">入れ替えたあと、回数を確かめて「直した内容を保存」を押すと記録が変わります。</div>`;
+    sn.style.display = "block";
+    $("#wUseGuide").addEventListener("click", ()=>{
+      W.sets.forEach(x=>{ if (Number(x.w) > 0) x.w = String(g.today); });
+      W.dirty = true; renderWeight();
+    });
+  } else sn.style.display = "none";
   $("#wRecTitle").textContent = W.loadedId ? "この日の記録を直す" : "記録する";
   $("#wSave").textContent = W.loadedId ? "直した内容を保存" : "この記録を保存";
   $("#wDel").style.display = W.loadedId ? "" : "none";
@@ -4306,6 +4334,9 @@ function renderWeight(){
   // 体重
   const bws = bwOf(me.id), today = bws.find(x=>x.date===W.date), last = bws[bws.length-1];
   if (!(W.bwDraft && W.bwDraft.date === W.date)) $("#wBwKg").value = today ? today.kg : "";   // 打ちかけは残す
+  $("#wBwLbl").innerHTML = `${W.date === todayLocal() ? "今日" : fmtMD(W.date)}の体重（kg）`
+    + (today ? '<span style="display:block;font-weight:400;font-size:12px;color:#2f7d4f">✓ 記録済み</span>'
+             : '<span style="display:block;font-weight:400;font-size:12px;color:#b8471f">まだ記録していません</span>');
   $("#wBwKg").placeholder = last ? `前回 ${last.kg}kg（${fmtMD(last.date)}）` : "例）68.5";
 }
 async function wBwSave(){
@@ -4584,16 +4615,16 @@ $("#wDate").addEventListener("change", e=>{ W.date = e.target.value || todayLoca
 $("#wBwKg").addEventListener("input", e=>{ W.bwDraft = {date: W.date}; });
 $("#wSets").addEventListener("input", e=>{
   const t = e.target; if (!t.dataset.wi) return;
-  W.sets[+t.dataset.wi][t.dataset.k] = t.value;
+  W.sets[+t.dataset.wi][t.dataset.k] = t.value; W.dirty = true;
 });
 $("#wSets").addEventListener("click", e=>{
   const b = e.target.closest("[data-wdel]"); if (!b) return;
-  W.sets.splice(+b.dataset.wdel, 1); renderWSets();
+  W.sets.splice(+b.dataset.wdel, 1); W.dirty = true; renderWSets();
 });
 $("#wAddSet").addEventListener("click", ()=>{
   if (W.sets.length >= 10) return;
   const last = W.sets[W.sets.length-1];
-  W.sets.push({w: last ? last.w : "", r: ""}); renderWSets();
+  W.sets.push({w: last ? last.w : "", r: ""}); W.dirty = true; renderWSets();
 });
 $("#wSave").addEventListener("click", wSave);
 $("#wDel").addEventListener("click", wDeleteDay);
