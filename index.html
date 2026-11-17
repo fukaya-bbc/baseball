@@ -259,6 +259,14 @@ td .mk{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ro .wo{display:none}
 body.mgr .mo{display:none}
+/* 試合を直す：トレーナーとマネージャー／消す：トレーナーだけ */
+.gedit,.gdel{display:none}
+body.adm .gedit,body.mgr .gedit,body.adm .gdel{display:inline-flex}
+.gdel{color:#b3261e}
+:root[data-theme="dark"] .gdel{color:#f08a63}
+@media (prefers-color-scheme: dark){ :root:where(:not([data-theme="light"])) .gdel{color:#f08a63} }
+.btnrow.nogame .gedit,.btnrow.nogame .gdel{display:none}   /* 試合がまだ無いときは出さない */
+.geform{margin-top:10px;border:1px solid var(--border,#ddd);border-radius:12px;padding:10px 12px}
 body.mgr .mlock{pointer-events:none;opacity:.5}
 body.mgr #cardPA{display:none}
 #cardPA.noself{display:none!important}
@@ -444,7 +452,10 @@ body.adm nav.tabs button.ao{display:flex}
   <div class="card">
     <h2>試合</h2>
     <div class="row"><div><label class="fld" for="selGame">対戦</label><select id="selGame"></select></div></div>
-    <div class="btnrow wo mo"><button class="btn sec" id="btnNewGame" type="button">試合を追加</button></div>
+    <div class="btnrow wo"><button class="btn sec mo" id="btnNewGame" type="button">試合を追加</button>
+      <button class="btn sec gedit" type="button" data-gedit="b">試合を直す</button>
+      <button class="btn sec gdel" type="button" data-gdel="b">試合を消す</button></div>
+    <div class="geform" id="geForm_b" style="display:none"></div>
     <div id="newGameForm" style="display:none;margin-top:10px">
       <div class="row">
         <div><label class="fld" for="ngDate">日付</label><input type="date" id="ngDate"></div>
@@ -588,7 +599,10 @@ body.adm nav.tabs button.ao{display:flex}
       <div><label class="fld" for="selArm">投手</label><select id="selArm"></select></div>
       <div><label class="fld" for="selInning">回</label><select id="selInning"></select></div>
     </div>
-    <div class="btnrow wo"><button class="btn sec" id="btnNewPGame" type="button">試合を追加</button></div>
+    <div class="btnrow wo"><button class="btn sec" id="btnNewPGame" type="button">試合を追加</button>
+      <button class="btn sec gedit" type="button" data-gedit="p">試合を直す</button>
+      <button class="btn sec gdel" type="button" data-gdel="p">試合を消す</button></div>
+    <div class="geform" id="geForm_p" style="display:none"></div>
     <div id="newPGameForm" style="display:none;margin-top:10px">
       <div class="row">
         <div><label class="fld" for="npDate">日付</label><input type="date" id="npDate"></div>
@@ -1518,9 +1532,11 @@ function myArms(){
     ? Number(a.userId) === Number(ME.id)
     : sameName(a.name, ME.name));
 }
-function canSeePitch(){    return canSeeAll() || isManager || myArms().length > 0; }
-function canSeeAllPitch(){ return canSeeAll() || isManager; }
-// 投球の分析を出すかどうか。選手は自分の投球だけ見られる。
+// 投球の分析は、ログインしている全員が全投手分を見られる（野手も打球の予測に使う）。
+// 入力はマネージャーとトレーナーだけ。
+function canSeePitch(){    return true; }   // 画面はログインしないと出ないので、出ていれば誰でも見てよい
+function canSeeAllPitch(){ return true; }
+// 投球の分析を出すかどうか
 function applyPitchView(){
   const chip = document.querySelector('#statMode [data-v="pitch"]');
   if (chip) chip.style.display = canSeePitch() ? "" : "none";
@@ -1548,8 +1564,8 @@ function applyRole(){
       + "・<b>トレーナー</b>：すべて操作できます（ウエイトは選手の記録を直す・消すことができ、新しく入れるのは本人だけです。打者の一覧に自分を登録すると、自分のウエイトも記録できます）<br>"
       + "・<b>監督・コーチ</b>：全選手の打撃・投球の分析、ウエイトの細かい記録と体重まで、すべて<b>見られます</b>。記録・修正・削除はできません<br>"
       + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。<b>投球データの記録・修正・削除</b>と試合の追加ができます。打席は<b>結果だけ</b>直せます（コースや球種は直せません。打席の新規記録や削除はできません）。ウエイトはランキングだけ見られます<br>"
-      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます。ウエイトと体重は<b>自分の分だけ</b>記録でき、細かい記録と体重は本人とトレーナー・監督・コーチだけが見られます<br>"
-      + "・<b>閲覧のみ</b>：分析を見るだけ"
+      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析も全投手分を見られます（入力はマネージャーとトレーナーだけ）。ウエイトと体重は<b>自分の分だけ</b>記録でき、細かい記録と体重は本人とトレーナー・監督・コーチだけが見られます<br>"
+      + "・<b>閲覧のみ</b>：分析（投球の分析も）を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
 const ROLE_LBL = {admin:"トレーナー", coach:"監督・コーチ", manager:"マネージャー", player:"選手", viewer:"閲覧のみ"};
@@ -1737,7 +1753,15 @@ $("#btnSaveGame").addEventListener("click", async ()=>{
   }catch(e){ writeFailed(e); }
 });
 
+// 試合を直す・消すボタンは、選んでいる試合があるときだけ出す
+function updGameBtns(){
+  const has = id => !!(id && CACHE.games[id]);
+  const gb = document.querySelector('[data-gedit="b"]'), gp = document.querySelector('[data-gedit="p"]');
+  if (gb) gb.parentElement.classList.toggle("nogame", !has(ST.gameId));
+  if (gp) gp.parentElement.classList.toggle("nogame", !has(PST.gameId));
+}
 function renderGames(){
+  setTimeout(updGameBtns, 0);
   const sel = $("#selGame");
   const gs = DB.games.slice().sort((a,b)=> String(b.date).localeCompare(String(a.date)));
   if (!gs.length){ sel.innerHTML = '<option value="">試合を追加してください</option>'; ST.gameId = null; }
@@ -1750,6 +1774,72 @@ function renderGames(){
 $("#selGame").addEventListener("change", e=>{
   setEditing(null); clearPA();
   ST.gameId = e.target.value||null; ST.pitcherId = null; renderGames(); renderAll();
+});
+
+/* ---- 試合を直す（日付・相手校）・消す ---- */
+// b＝打撃タブ、p＝投球タブ。どちらも「いま選んでいる試合」が対象
+function curGameId(t){ return t === "p" ? PST.gameId : ST.gameId; }
+function gameKids(gid){
+  const by = c => DB[c].filter(x => x.gameId === gid && !x.stub);
+  return { pas: by("pas"), bf: by("bf"), inn: by("inn"), olu: by("olu"), pitchers: by("pitchers") };
+}
+document.addEventListener("click", async e=>{
+  const be = e.target.closest("[data-gedit]"), bd = e.target.closest("[data-gdel]");
+  if (be){
+    const t = be.dataset.gedit, g = CACHE.games[curGameId(t)], host = $("#geForm_" + t);
+    if (!g){ await tell("直す試合を選んでください。"); return; }
+    if (host.style.display === "block"){ host.style.display = "none"; return; }
+    host.innerHTML = `<div class="row">
+        <div><label class="fld" for="geDate_${t}">日付</label><input type="date" id="geDate_${t}" value="${esc(g.date)}"></div>
+        <div style="flex:2"><label class="fld" for="geOpp_${t}">相手校</label><input type="text" id="geOpp_${t}" value="${esc(g.opponent)}"></div>
+      </div>
+      <div class="note">記録はそのまま残り、試合の日付と相手校の名前だけが変わります。</div>
+      <div class="btnrow"><button class="btn" type="button" data-gesave="${t}">直した内容を保存</button>
+        <button class="btn sec" type="button" data-gecancel="${t}">やめる</button></div>
+      <div class="note" id="geNote_${t}"></div>`;
+    host.style.display = "block"; $("#geOpp_" + t).focus();
+    return;
+  }
+  const bs = e.target.closest("[data-gesave]"), bc = e.target.closest("[data-gecancel]");
+  if (bc){ $("#geForm_" + bc.dataset.gecancel).style.display = "none"; return; }
+  if (bs){
+    const t = bs.dataset.gesave, g = CACHE.games[curGameId(t)];
+    if (!g) return;
+    const date = $("#geDate_" + t).value, opp = $("#geOpp_" + t).value.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ note("geNote_" + t, "日付を入れてください。"); return; }
+    if (!opp){ note("geNote_" + t, "相手校を入れてください。"); $("#geOpp_" + t).focus(); return; }
+    const ng = {...g, date, opponent: opp};
+    try{
+      await put("games", ng); CACHE.games[g.id] = ng; rebuild();
+      $("#geForm_" + t).style.display = "none"; note("pGameNote", "");
+      renderGames(); renderAll(); renderPAll();
+      await tell(`${date}　${opp} に直しました。`);
+    }catch(err){ writeFailed(err); }
+    return;
+  }
+  if (bd){
+    const t = bd.dataset.gdel, gid = curGameId(t), g = CACHE.games[gid];
+    if (!g){ await tell("消す試合を選んでください。"); return; }
+    const k = gameKids(gid);
+    const parts = [k.pas.length && `打席 ${k.pas.length}件`, k.bf.length && `投球（打者ごと）${k.bf.length}件`,
+                   k.inn.length && `回ごとの球数など ${k.inn.length}件`, k.pitchers.length && `相手投手 ${k.pitchers.length}人`,
+                   k.olu.length && `相手打者の左右`].filter(Boolean);
+    const msg = `${g.date}　${g.opponent} の試合を消します。`
+      + (parts.length ? `\nこの試合の ${parts.join("・")} も一緒に消え、元に戻せません。` : "\nこの試合にはまだ記録がありません。")
+      + `\n日付や相手校を間違えただけなら、「試合を直す」で直せます。\n本当に消しますか？`;
+    if (!await ask(msg)) return;
+    try{
+      await api("gameDel", {id: gid});
+      Object.values(k).flat().forEach(x => { for (const c of ["pas","bf","inn","olu","pitchers"]) if (CACHE[c][x.id] === x) delete CACHE[c][x.id]; });
+      delete CACHE.games[gid]; rebuild();
+      if (ST.gameId === gid){ ST.gameId = null; ST.pitcherId = null; setEditing(null); clearPA(); }
+      if (PST.gameId === gid){ PST.gameId = null; setEditingBF(null); clearBF(); }
+      $("#geForm_" + t).style.display = "none"; note("pGameNote", "");
+      renderGames(); renderAll(); renderPAll();
+      await tell(`${g.date}　${g.opponent} の試合を消しました。`);
+      syncNow(true);
+    }catch(err){ writeFailed(err); }
+  }
 });
 
 /* ============================================================
@@ -2777,10 +2867,15 @@ function showLogin(msg){
   USERS = [];
   COLLS.forEach(c => CACHE[c] = {}); rebuild(); lastSync = 0;
   // ウエイトの画面も前の人の状態を残さない
-  try{ wTimerStop(); Object.assign(W, {ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null});
+  try{ wTimerStop(); Object.assign(W, {ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null,
+                                       dirty:false, savedHere:null, bwDraft:null});
+       const ws = document.getElementById("wSets"); if (ws) ws._h = null;
        Object.keys(WTR).forEach(k=>delete WTR[k]); wCfgDraft = null;
        const d = document.getElementById("wDone"); if (d) d.style.display = "none"; }catch(e){}
   try{ setEditing(null); setEditingBF(null); }catch(e){}
+  // 分析の表示や打ちかけの数字も、次にログインする人に持ち越さない
+  try{ statMode = "bat"; chipSet("#statMode", statMode); PF.arm = "";
+       innForm.key = null; innForm.dirty = false; oluKey = null; oluDirty = false; }catch(e){}
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   document.body.classList.remove("adm");
   $("#menu").classList.remove("on");
@@ -3198,11 +3293,11 @@ function renderArms(){
         + `<div class="s">${THROW_LBL[a.throws]||""}</div>`
         + `<label class="fld" style="margin-top:7px">この投手のアカウント`
         + `<span class="hint" style="display:block;font-weight:400">`
-        + `選んだ人だけが、自分の投球分析を見られます</span></label>`
+        + `選ぶと、その人が投球の分析を開いたとき自分の投球が最初に出ます（分析は全員が見られます）</span></label>`
         + `<select data-armuser="${a.id}">`
         + `<option value=""${a.userId==null?" selected":""}>`
         + `${auto ? `自動：${esc(accLbl(hit))}（名前が同じ）`
-                  : (accs.length ? "決めない（本人は見られません）"
+                  : (accs.length ? "決めない"
                                  : "選べるアカウントがありません（選手のアカウントを作ると出ます）")}</option>`
         + accs.map(u=>pOpt(u.id, accLbl(u), a.userId==null?"":a.userId)).join("")
         + `</select></div>`
@@ -3231,6 +3326,7 @@ function renderArms(){
 }
 const innForm = { key:null, dirty:false };   // 「この回」の入力欄に打ちかけの数字があるか
 function renderPSelectors(){
+  setTimeout(updGameBtns, 0);
   const gs = [...DB.games].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
   if (!gs.some(g=>g.id===PST.gameId)) PST.gameId = gs.length ? gs[0].id : null;
   $("#selPGame").innerHTML = gs.length
@@ -3826,8 +3922,9 @@ function leadStats(bfs, inns){
 
 /* ---- 投球：分析の描画 ---- */
 function fillPFilters(){
-  const list = canSeeAllPitch() ? DB.arms : myArms();   // 選手は自分の投球だけ
-  if (!list.some(a=>a.id===PF.arm)) PF.arm = list.length ? list[0].id : "";
+  const list = canSeeAllPitch() ? DB.arms : myArms();
+  // 自分が投手として登録されていれば、最初は自分の投球を出す
+  if (!list.some(a=>a.id===PF.arm)){ const m = myArms()[0]; PF.arm = m ? m.id : (list.length ? list[0].id : ""); }
   $("#fPArm").innerHTML = list.length
     ? list.map(a=>pOpt(a.id, `${a.name}（${THROW_LBL[a.throws]||""}）`, PF.arm)).join("")
     : '<option value="">投手がいません</option>';
