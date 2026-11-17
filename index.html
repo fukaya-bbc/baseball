@@ -1437,7 +1437,17 @@ function startPolling(){
   }
 }
 
+// 自動の同期で描き直すときは、打っている途中の入力欄を作り直さない
+let passiveDraw = false;
+function typingIn(host){
+  const a = document.activeElement;
+  return !!(host && a && host.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+}
 function redrawAll(){
+  passiveDraw = true;
+  try{ redrawAll0(); } finally { passiveDraw = false; }
+}
+function redrawAll0(){
   applyPitchView();
   renderPlayers(); renderGames(); renderPitchers(); renderGamePAs();
   renderPAll();
@@ -3147,6 +3157,7 @@ function renderArms(){
     catch(e){ writeFailed(e); }
   }));
 }
+const innForm = { key:null, dirty:false };   // 「この回」の入力欄に打ちかけの数字があるか
 function renderPSelectors(){
   const gs = [...DB.games].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
   if (!gs.some(g=>g.id===PST.gameId)) PST.gameId = gs.length ? gs[0].id : null;
@@ -3176,11 +3187,17 @@ function renderPSelectors(){
   const prev = pitchesBefore(PST.gameId, PST.inning, PST.armId);
   chipSet("#innMode", innPitchMode);
   $("#innPitchLbl").textContent = innPitchMode==="total" ? "この回までの累計球数" : "この回の球数";
-  $("#innPitches").value = r && r.pitches!=null
-    ? (innPitchMode==="total" ? prev + r.pitches : r.pitches) : "";
-  $("#innRuns").value    = r && r.runs!=null      ? r.runs      : "";
-  $("#innOuts").value    = r && r.extraOuts!=null ? r.extraOuts : "";
-  innTb = !!(r && r.tb); chipSet("#innTb", innTb ? "1" : "");
+  // 打っている途中の数字は、自動の同期で消さない（試合・回・投手・入れ方が変わったときだけ入れ直す）
+  const ikey = [PST.gameId, PST.inning, PST.armId, innPitchMode].join("|");
+  if (ikey !== innForm.key || !innForm.dirty){
+    innForm.key = ikey; innForm.dirty = false;
+    $("#innPitches").value = r && r.pitches!=null
+      ? (innPitchMode==="total" ? prev + r.pitches : r.pitches) : "";
+    $("#innRuns").value    = r && r.runs!=null      ? r.runs      : "";
+    $("#innOuts").value    = r && r.extraOuts!=null ? r.extraOuts : "";
+    innTb = !!(r && r.tb);
+  }
+  chipSet("#innTb", innTb ? "1" : "");
   updateInnCalc();
 }
 // 入れた数字が「この回」と「累計」でそれぞれ何球になるかを出す
@@ -3320,11 +3337,14 @@ function renderGameInn(){
 function updateBFNote(){
   $("#btnSaveBF").disabled = !(PST.gameId && PST.armId && PST.first && PST.result);
 }
-let oluDraft = {};
+let oluDraft = {}, oluKey = null, oluDirty = false;   // 保存前に押した左右は同期で消さない
 function renderOlu(){
   const host = $("#oluGrid"); if(!host) return;
   const cur = oluOf(PST.gameId);
-  oluDraft = Object.assign({}, (cur && cur.bats) || {});
+  if (PST.gameId !== oluKey || !oluDirty){
+    oluKey = PST.gameId; oluDirty = false;
+    oluDraft = Object.assign({}, (cur && cur.bats) || {});
+  }
   host.innerHTML = Array.from({length:LINEUP_N},(_,i)=>{
     const p = i+1, v = oluDraft[String(p)] || "";
     return `<div class="ob"><div class="n">${p}番</div><div class="bs">`
@@ -3335,6 +3355,7 @@ function renderOlu(){
   host.querySelectorAll("[data-ob]").forEach(b=>b.addEventListener("click", ()=>{
     const [p,v] = b.dataset.ob.split(":");
     oluDraft[p] = (oluDraft[p] === v) ? "" : v;      // もう一度押すと取り消し
+    oluDirty = true;
     Array.from(host.querySelectorAll(`[data-ob^="${p}:"]`)).forEach(x=>
       x.setAttribute("aria-pressed", String(x.dataset.ob === p+":"+oluDraft[p])));
   }));
@@ -3478,7 +3499,7 @@ $("#btnSaveOlu").addEventListener("click", async ()=>{
   const bats = {}; Object.entries(oluDraft).forEach(([k,v])=>{ if(v) bats[k]=v; });
   const cur = oluOf(PST.gameId);              // 同じ試合の記録があればそれを上書き（二重にしない）
   const rec = { ...(cur || {}), id: cur ? cur.id : "olu_"+PST.gameId, gameId: PST.gameId, bats };
-  try{ await put("olu", rec); CACHE.olu[rec.id]=rec; rebuild(); renderPAll();
+  try{ await put("olu", rec); CACHE.olu[rec.id]=rec; rebuild(); oluDirty = false; renderPAll();
        note("oluNote", `相手の打順を保存しました（${Object.keys(bats).length}人分）。`); }
   catch(e){ writeFailed(e); }
 });
@@ -3570,8 +3591,10 @@ $("#btnSaveBF").addEventListener("click", async ()=>{
   }catch(e){ writeFailed(e); }
 });
 $("#innTb").addEventListener("click", ()=>{
-  innTb = !innTb; chipSet("#innTb", innTb ? "1" : "");
+  innTb = !innTb; chipSet("#innTb", innTb ? "1" : ""); innForm.dirty = true;
 });
+["#innPitches","#innRuns","#innOuts"].forEach(q=>
+  $(q).addEventListener("input", ()=>{ innForm.dirty = true; }));
 $("#innMode").addEventListener("click", e=>{
   const c = e.target.closest(".chip"); if(!c) return;
   innPitchMode = c.dataset.v;
@@ -3583,7 +3606,7 @@ $("#btnDelInn").addEventListener("click", async ()=>{
   const r = innRec(PST.gameId, PST.inning, PST.armId);
   if (!r){ note("innNote","この回・この投手の記録はまだありません。"); return; }
   if (!await ask(`${PST.inning}回の${(curArm()||{}).name||""}の球数・失点を消します。よろしいですか？\n打者の記録は残ります。`)) return;
-  try{ await drop("inn", r.id); delete CACHE.inn[r.id]; rebuild(); renderPAll();
+  try{ await drop("inn", r.id); delete CACHE.inn[r.id]; rebuild(); innForm.dirty = false; renderPAll();
        note("innNote","消しました。"); }
   catch(e){ writeFailed(e); }
 });
@@ -3618,7 +3641,7 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
     extraOuts: xo,
     tb:        innTb || false };
   try{
-    await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild();
+    await put("inn", rec); CACHE.inn[rec.id]=rec; rebuild(); innForm.dirty = false;
     const savedInning = PST.inning, savedName = (curArm()||{}).name || "";
     if (pendingArm){                                   // 交代の続き
       const nn = (DB.arms.find(a=>a.id===pendingArm)||{}).name || "";
@@ -3964,7 +3987,12 @@ function wReps(rec){
   return best;
 }
 function wFloor(v, step){ return v == null ? null : Math.floor(v / step + 1e-9) * step; }
-function fmtKg(v){ return v == null ? "—" : (Math.round(v*100)/100).toFixed(1).replace(/\.0$/,".0") + "kg"; }
+function fmtKg(v){
+  if (v == null) return "—";
+  let t = String(Math.round(Number(v)*100)/100);     // 52.5→52.5 / 51.25→51.25
+  if (!t.includes(".")) t += ".0";                    // 55→55.0
+  return t + "kg";
+}
 function fmtMD(d){ const m = String(d||"").match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? (+m[1]) + "/" + (+m[2]) : String(d||""); }
 const wKey = d => String(d).replace(/-/g,"");
 const wtId = (pid, date, ex) => `${pid}-${wKey(date)}-${ex}`;
@@ -4098,7 +4126,7 @@ function wReadSets(){
   const ex = WEXM[W.ex], c = wcfg(), out = [], errs = [];
   W.sets.forEach((s,i)=>{
     const rs = String(s.r).trim(), ws = String(s.w).trim();
-    if (rs === "" && (ws === "" || !(ex.kind === "w" || ex.kind === "o"))) return;   // 空の行は無視
+    if (rs === "") return;   // 回数が空の行は無視（重さだけ先に入っている行も、やらなかったセットとみなす）
     const r = Number(rs);
     if (!Number.isInteger(r) || r < 1 || r > 100){ errs.push(`${i+1}セット目の回数を1〜100で入れてください。`); return; }
     let w = null;
@@ -4239,6 +4267,7 @@ document.addEventListener("visibilitychange", ()=>{
 /* ---- ウエイトタブ ---- */
 function renderWeight(){
   if (!$("#p-weight")) return;
+  if (passiveDraw && typingIn($("#p-weight"))) return;
   renderWInstr();
   const me = wMe();
   const recCards = ["#cardWRec","#cardWToday","#cardWBw"];
@@ -4276,7 +4305,7 @@ function renderWeight(){
     : '<div class="empty-note">この日の記録はまだありません</div>';
   // 体重
   const bws = bwOf(me.id), today = bws.find(x=>x.date===W.date), last = bws[bws.length-1];
-  if (document.activeElement !== $("#wBwKg")) $("#wBwKg").value = today ? today.kg : "";
+  if (!(W.bwDraft && W.bwDraft.date === W.date)) $("#wBwKg").value = today ? today.kg : "";   // 打ちかけは残す
   $("#wBwKg").placeholder = last ? `前回 ${last.kg}kg（${fmtMD(last.date)}）` : "例）68.5";
 }
 async function wBwSave(){
@@ -4286,7 +4315,7 @@ async function wBwSave(){
   if (W.date > todayLocal()){ note("wBwNote","未来の日付には記録できません。"); return; }
   const id = bwId(me.id, W.date), old = CACHE.bw[id];
   const rec = {...(old||{}), id, playerId: me.id, date: W.date, kg: Math.round(kg*10)/10, ts: old ? old.ts : Date.now()};
-  try{ await put("bw", rec); CACHE.bw[id] = rec; rebuild(); renderWeight();
+  try{ await put("bw", rec); CACHE.bw[id] = rec; rebuild(); W.bwDraft = null; renderWeight();
        note("wBwNote", `${fmtMD(W.date)}の体重を${old ? "直しました" : "記録しました"}（${rec.kg}kg）。体重の数字とグラフは、本人と監督・コーチだけが見られます。`);
        syncNow(true); }
   catch(e){ writeFailed(e); }
@@ -4339,7 +4368,7 @@ function wChart(points, unit){
     + `<div class="wtip" style="display:none"></div></div>`;
 }
 // グラフに指を当てると、いちばん近い日の値を出す
-document.addEventListener("pointermove", e=>{
+function wTipAt(e){
   const box = e.target.closest && e.target.closest(".wchart"); if (!box) return;
   const pts = JSON.parse(box.dataset.pts || "[]"); if (!pts.length) return;
   const r = box.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 100;
@@ -4349,7 +4378,9 @@ document.addEventListener("pointermove", e=>{
   tip.style.display = "block";
   tip.style.left = Math.min(Math.max(pts[k][2], 12), 80) + "%";
   tip.style.top = Math.max(pts[k][3] - 16, 0) + "%";
-});
+}
+document.addEventListener("pointermove", wTipAt);
+document.addEventListener("pointerdown", wTipAt);   // スマホはタップでも出す
 document.addEventListener("pointerleave", e=>{
   if (e.target && e.target.classList && e.target.classList.contains("wchart")) e.target.querySelector(".wtip").style.display = "none";
 }, true);
@@ -4358,6 +4389,8 @@ function renderWTrend(hostId, pid, editable){
   const host = document.getElementById(hostId); if (!host) return;
   if (!pid){ host.innerHTML = '<div class="empty-note">まだ記録がありません</div>'; return; }
   const st = WTR[hostId] = WTR[hostId] || {ex:null, edit:null, bwEdit:null};
+  // 「直す」を開いている途中は、自動の同期で作り直さない
+  if (passiveDraw && (st.edit || st.bwEdit || typingIn(host))) return;
   const have = WEX.filter(e=>DB.wt.some(r=>r.playerId===pid && r.ex===e.id));
   if (!st.ex || !WEXM[st.ex]) st.ex = have.length ? have[0].id : "bench";
   const ex = WEXM[st.ex], recs = wRecsOf(pid, st.ex);
@@ -4528,8 +4561,9 @@ function renderWCfg(){
   if (!$("#cardWCfg")) return;
   const c = wcfg(); wCfgDraft = wCfgDraft || {mode:c.mode, sets:c.sets};
   chipSet("#wCfgMode", wCfgDraft.mode); chipSet("#wCfgSets", String(wCfgDraft.sets));
-  if (document.activeElement !== $("#wCfgSitup")) $("#wCfgSitup").value = c.fixed.situp == null ? "" : c.fixed.situp;
-  if (document.activeElement !== $("#wCfgRear"))  $("#wCfgRear").value  = c.fixed.rear  == null ? "" : c.fixed.rear;
+  // 打ちかけ（保存前）の重さは残す
+  if (wCfgDraft.situp === undefined) $("#wCfgSitup").value = c.fixed.situp == null ? "" : c.fixed.situp;
+  if (wCfgDraft.rear  === undefined) $("#wCfgRear").value  = c.fixed.rear  == null ? "" : c.fixed.rear;
 }
 async function wCfgSave(){
   const num = v => { const s = String(v).trim(); if (s === "") return null; const n = Number(s); return n > 0 && n <= 100 ? n : NaN; };
@@ -4547,6 +4581,7 @@ async function wCfgSave(){
 /* ---- つなぎこみ ---- */
 buildWExList();
 $("#wDate").addEventListener("change", e=>{ W.date = e.target.value || todayLocal(); W.loadedId = null; $("#wDone").style.display = "none"; loadWForm(); renderWeight(); });
+$("#wBwKg").addEventListener("input", e=>{ W.bwDraft = {date: W.date}; });
 $("#wSets").addEventListener("input", e=>{
   const t = e.target; if (!t.dataset.wi) return;
   W.sets[+t.dataset.wi][t.dataset.k] = t.value;
@@ -4573,6 +4608,8 @@ $("#wAdmPlayer").addEventListener("change", e=>{ W.admPid = e.target.value; WTR.
 $("#wTrPlayer").addEventListener("change", e=>{ W.trPid = e.target.value; WTR.wTrend = null; renderWStats(); });
 $("#wRkEx").addEventListener("change", e=>{ wRkEx = e.target.value; renderWRank(); });
 $("#wRkMode").addEventListener("click", e=>{ const s = e.target.closest("[data-v]"); if (!s) return; wRkMode = s.dataset.v; renderWRank(); });
+$("#wCfgSitup").addEventListener("input", e=>{ wCfgDraft = {...(wCfgDraft||wcfg()), situp:e.target.value}; });
+$("#wCfgRear").addEventListener("input",  e=>{ wCfgDraft = {...(wCfgDraft||wcfg()), rear:e.target.value}; });
 $("#wCfgMode").addEventListener("click", e=>{ const b = e.target.closest(".chip"); if (!b) return; wCfgDraft = {...(wCfgDraft||wcfg()), mode:b.dataset.v}; renderWCfg(); });
 $("#wCfgSets").addEventListener("click", e=>{ const b = e.target.closest(".chip"); if (!b) return; wCfgDraft = {...(wCfgDraft||wcfg()), sets:Number(b.dataset.v)}; renderWCfg(); });
 $("#wCfgSave").addEventListener("click", wCfgSave);
