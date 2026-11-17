@@ -273,6 +273,70 @@ body.editing #btnSavePA{background:#b8471f}
 .palist .bd{cursor:pointer}
 .ao{display:none}
 nav.tabs button.ao{display:none}
+/* ウエイト：選手と監督・コーチだけ（マネージャー・閲覧のみには出さない） */
+body.mgr nav.tabs button.wtab,body.ro nav.tabs button.wtab{display:none}
+.instr{display:flex;gap:8px;flex-wrap:wrap}
+.instr .b{flex:1;min-width:76px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--neutral)}
+.instr .b:first-child{flex:1.9}
+.instr .v{white-space:nowrap}
+.instr .k{font-size:11px;color:var(--muted);font-weight:650}.instr .v{font-size:15px;font-weight:700;margin-top:2px}
+.guide{border:1px solid rgba(0,117,198,.35);background:rgba(0,117,198,.06);border-radius:12px;padding:10px 12px;margin-top:12px}
+.guide .t{font-size:12px;color:var(--text-secondary)}
+.guide .big{font-size:22px;font-weight:800;margin:2px 0}
+.guide .s{font-size:12.5px;color:var(--text-secondary);line-height:1.65}
+.setrow{display:grid;grid-template-columns:64px 1fr 30px 1fr 18px 32px;gap:6px;align-items:center;margin-top:8px}
+.setrow.nw{grid-template-columns:64px 1fr 18px 32px}
+.setrow .n{font-size:12.5px;font-weight:650;color:var(--text-secondary)}
+.setrow input{text-align:right;min-width:0}
+.setrow .u,.setrow .x{font-size:12px;color:var(--muted);text-align:center}
+.setrow .del{width:32px;height:32px}
+.mini{padding:8px 12px!important;min-height:0!important;font-size:12.5px!important;width:auto!important}
+.timer{display:flex;align-items:center;gap:8px;margin-top:14px;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.timer .lbl{font-size:12.5px;color:var(--text-secondary);font-weight:650}
+.timer input{width:76px;text-align:right}
+.timer .cd{margin-left:auto;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+.timer.ring{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,117,198,.25);animation:wring 1s ease-in-out 3}
+@keyframes wring{50%{background:rgba(0,117,198,.10)}}
+.done{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--neutral);margin-top:12px}
+.done .h{font-size:12px;font-weight:700;color:var(--text-secondary)}
+.done .row2{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
+.done .big{font-size:20px;font-weight:800}
+.done .s{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.up{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(0,117,198,.12);color:var(--accent)}
+.up.keep{background:var(--chip);color:var(--text-secondary)}
+.rk{list-style:none;margin:8px 0 0;padding:0}
+.rk li{display:grid;grid-template-columns:28px 1fr 78px;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--grid);font-size:13.5px}
+.rk li .no{font-weight:700;color:var(--text-secondary);text-align:right}
+.rk li .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk li .bar{height:6px;border-radius:0 4px 4px 0;background:var(--accent);margin-top:4px;opacity:.85}
+.rk li .val{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.rk li.me{background:rgba(0,117,198,.08);border-radius:8px}
+.rk li.me .nm{font-weight:800}
+.seg{display:flex;border:1px solid var(--axis);border-radius:999px;overflow:hidden;margin-top:10px}
+.seg span{flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:650;cursor:pointer}
+.seg span.on{background:var(--chip-on);color:#fff}
+.lg{font-size:11.5px;color:var(--muted);margin-top:4px}
+table.hist{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+table.hist th{font-size:11px;color:var(--muted);text-align:left;font-weight:650;padding:5px 4px;border-bottom:1px solid var(--grid)}
+table.hist th.r,table.hist td.r{text-align:right}
+table.hist td{padding:7px 4px;border-bottom:1px solid var(--grid);white-space:nowrap;font-variant-numeric:tabular-nums}
+.prk{font-size:10.5px;font-weight:800;color:var(--accent);margin-left:4px}
+.lnk{border:0;background:transparent;color:var(--accent);font-weight:700;font-size:12px;padding:6px 6px;cursor:pointer;font-family:inherit}
+.lnk.dgr{color:var(--crit)}
+.weditor{border:1px solid rgba(0,117,198,.35);border-radius:10px;padding:8px 10px;background:rgba(0,117,198,.04);white-space:normal}
+.weditor .btnrow{gap:6px}
+.wchart{position:relative}
+.wchart svg{width:100%;height:auto;display:block}
+.wchart .gl{stroke:var(--grid);stroke-width:1}
+.wchart .ax{font-size:10.5px;fill:var(--muted)}
+.wchart .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.wchart .dt{fill:var(--accent);stroke:var(--surface-1);stroke-width:2}
+.wchart .lv{font-size:12px;font-weight:700;fill:var(--text-primary)}
+.wtip{position:absolute;transform:translate(-50%,-100%);background:var(--text-primary);color:var(--surface-1);
+  font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--grid);font-size:13.5px}
+.opt .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.opt input{width:76px;text-align:right}
 nav.tabs button.po{display:none}
 body.adm nav.tabs button.po,body.mgr nav.tabs button.po{display:flex}
 body.adm .ao{display:block}
@@ -614,11 +678,81 @@ body.adm nav.tabs button.ao{display:flex}
   </div>
 </section>
 
+<!-- ============ ウエイト ============ -->
+<section class="panel" id="p-weight">
+  <div class="card"><h2>トレーナーからの指示</h2>
+    <div class="instr" id="wInstr"></div>
+    <div class="note" id="wInstrNote"></div>
+  </div>
+
+  <div class="card" id="cardWNoSelf" style="display:none">
+    <div class="note" style="margin:0">あなたの選手データが見つかりません。監督・コーチに、アカウントと打者一覧の名前が同じか確かめてもらってください。</div>
+  </div>
+
+  <div class="card" id="cardWRec">
+    <h2 id="wRecTitle">記録する</h2>
+    <label class="fld" for="wDate">日付</label><input type="date" id="wDate">
+    <label class="fld" style="margin-top:12px">種目</label>
+    <div id="wExList"></div>
+    <div class="guide" id="wGuide" style="display:none"></div>
+    <label class="fld" style="margin-top:14px" id="wSetsLbl">セット</label>
+    <div id="wSets"></div>
+    <div class="btnrow"><button class="btn sec mini" id="wAddSet" type="button">＋ セットを追加</button></div>
+    <div class="timer" id="wTimer">
+      <span class="lbl">休憩</span>
+      <input type="number" id="wRest" inputmode="numeric" min="5" max="900" step="5" placeholder="秒" aria-label="休憩の秒数">
+      <span class="lbl">秒</span>
+      <button class="btn mini" id="wTimerBtn" type="button">スタート</button>
+      <span class="cd" id="wCd">0:00</span>
+    </div>
+    <div class="note" id="wTimerNote">休憩の秒数は自分で入れます（前回の秒数を覚えておきます）。0になったら音で知らせます。</div>
+    <div class="btnrow">
+      <button class="btn" id="wSave" type="button">この記録を保存</button>
+      <button class="btn sec" id="wDel" type="button" style="display:none">この日の記録を消す</button>
+    </div>
+    <div class="note" id="wNote"></div>
+    <div class="done" id="wDone" style="display:none"></div>
+  </div>
+
+  <div class="card" id="cardWToday"><h2 id="wTodayTitle">この日の記録</h2><div id="wTodayList"></div>
+    <div class="note">押すと、その種目の入力欄に出ます（直すときもここから）。</div></div>
+
+  <div class="card" id="cardWBw"><h2>体重</h2>
+    <div class="row">
+      <div style="flex:2"><label class="fld" for="wBwKg">体重（kg）<span style="font-weight:400;color:var(--muted)">上の日付で記録</span></label>
+        <input type="number" id="wBwKg" inputmode="decimal" step="0.1" min="30" max="200"></div>
+      <div style="flex:1;align-self:end"><button class="btn" id="wBwSave" type="button">記録</button></div>
+    </div>
+    <div class="note" id="wBwNote">体重の数字とグラフは、本人と監督・コーチだけが見られます。</div>
+  </div>
+
+  <div class="card" id="cardWAdmin" style="display:none">
+    <h2>選手の記録を見る・直す<span class="hint">監督・コーチ</span></h2>
+    <label class="fld" for="wAdmPlayer">選手</label><select id="wAdmPlayer"></select>
+    <div id="wAdmBody" style="margin-top:10px"></div>
+  </div>
+</section>
+
 <!-- ============ 分析 ============ -->
 <section class="panel" id="p-stats">
   <div class="chips" id="statMode" style="margin-bottom:14px">
     <button class="chip" type="button" data-v="bat"   aria-pressed="true">打撃</button>
     <button class="chip" type="button" data-v="pitch" aria-pressed="false">投球</button>
+    <button class="chip" type="button" data-v="weight" aria-pressed="false">ウエイト</button>
+  </div>
+
+  <div id="statWeight" style="display:none">
+    <div class="card"><h2><span id="wRkTitle">推定MAXランキング</span><span class="hint" id="wRkHint"></span></h2>
+      <label class="fld" for="wRkEx">種目</label><select id="wRkEx"></select>
+      <div class="seg" id="wRkMode"><span data-v="max" class="on">推定MAX（kg）</span><span data-v="ratio">体重比</span></div>
+      <ul class="rk" id="wRank"></ul>
+      <div class="note" id="wRkNote"></div>
+    </div>
+    <div class="card" id="cardWTrend"><h2 id="wTrTitle">自分の推移</h2>
+      <div id="wTrPlayerRow"><label class="fld" for="wTrPlayer">選手</label><select id="wTrPlayer"></select></div>
+      <div id="wTrend" style="margin-top:10px"></div>
+      <div class="note">ここは本人と監督・コーチだけが見られます。</div>
+    </div>
   </div>
 
   <div id="statBat">
@@ -806,6 +940,20 @@ body.adm nav.tabs button.ao{display:flex}
     <div class="note" id="ioNote"></div>
   </div>
 
+  <div class="card ao" id="cardWCfg">
+    <h2>ウエイトの設定<span class="hint">監督・コーチ</span></h2>
+    <div class="opt"><span>回数の指示</span><span class="r chips" id="wCfgMode">
+      <button class="chip mini" type="button" data-v="std" aria-pressed="true">標準 6〜8回</button>
+      <button class="chip mini" type="button" data-v="vol" aria-pressed="false">ボリューム 10〜12回</button></span></div>
+    <div class="opt"><span>基本のセット数</span><span class="r chips" id="wCfgSets">
+      <button class="chip mini" type="button" data-v="2" aria-pressed="true">2</button>
+      <button class="chip mini" type="button" data-v="3" aria-pressed="false">3</button></span></div>
+    <div class="opt"><span>シットアップの重さ</span><span class="r"><input type="number" id="wCfgSitup" inputmode="decimal" step="0.5">kg</span></div>
+    <div class="opt"><span>サイドライイングリアレイズの重さ</span><span class="r"><input type="number" id="wCfgRear" inputmode="decimal" step="0.5">kg</span></div>
+    <div class="btnrow"><button class="btn" id="wCfgSave" type="button">設定を保存</button></div>
+    <div class="note" id="wCfgNote">保存すると、全員の「トレーナーからの指示」がすぐ変わります。休憩の目安は標準＝2分・ボリューム＝90秒です。過去の記録は、記録したときの指示のまま残ります。</div>
+  </div>
+
   <div class="card wo">
     <h2>アカウント管理<span class="hint">ログインできる人</span></h2>
     <div id="userList"></div>
@@ -876,6 +1024,7 @@ body.adm nav.tabs button.ao{display:flex}
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true"  data-p="p-input"><span class="ic">✎</span>打撃</button>
   <button role="tab" class="po" aria-selected="false" data-p="p-pitch"><span class="ic">◍</span>投球</button>
+  <button role="tab" class="wtab" aria-selected="false" data-p="p-weight"><span class="ic">▲</span>ウエイト</button>
   <button role="tab" aria-selected="false" data-p="p-stats"><span class="ic">▦</span>分析</button>
   <button role="tab" class="ao" aria-selected="false" data-p="p-data"><span class="ic">⇅</span>データ</button>
 </nav>
@@ -1164,9 +1313,11 @@ function fmtAvg(a){ return (a===null||a===undefined) ? "—" : a.toFixed(3).repl
 /* ============================================================
    共有ストア
    ============================================================ */
-const COLLS = ["players","games","pitchers","pas","arms","bf","inn","olu"];
-const CACHE = {players:{}, games:{}, pitchers:{}, pas:{}, arms:{}, bf:{}, inn:{}, olu:{}};
-let DB = {players:[], games:[], pitchers:[], pas:[], arms:[], bf:[], inn:[], olu:[]};
+const COLLS = ["players","games","pitchers","pas","arms","bf","inn","olu","wt","bw","wbest","wcfg"];
+// wbest（各種目の最高記録）はサーバーが作るので、書き出し・読み込み・消去の対象にしない
+const OWN_COLLS = COLLS.filter(c => c !== "wbest");
+const CACHE = {players:{}, games:{}, pitchers:{}, pas:{}, arms:{}, bf:{}, inn:{}, olu:{}, wt:{}, bw:{}, wbest:{}, wcfg:{}};
+let DB = {players:[], games:[], pitchers:[], pas:[], arms:[], bf:[], inn:[], olu:[], wt:[], bw:[], wbest:[], wcfg:[]};
 
 let ME = null;               // ログイン中の利用者
 let canWrite = null;         // 記録を書けるか
@@ -1185,6 +1336,10 @@ function rebuild(){
   DB.bf       = Object.values(CACHE.bf);
   DB.inn      = Object.values(CACHE.inn);
   DB.olu      = Object.values(CACHE.olu);
+  DB.wt       = Object.values(CACHE.wt).map(r => (r.sets = Array.isArray(r.sets) ? r.sets : [], r));
+  DB.bw       = Object.values(CACHE.bw);
+  DB.wbest    = Object.values(CACHE.wbest);
+  DB.wcfg     = Object.values(CACHE.wcfg);
   _subCache = null;
 }
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -1288,6 +1443,8 @@ function redrawAll(){
   renderPAll();
   updateZoneLabels(); updatePANote(); renderPlayerList();
   if (document.getElementById("p-stats").classList.contains("on")) renderStatsAll();
+  if (document.getElementById("p-weight").classList.contains("on")) renderWeight();
+  if (document.getElementById("p-data").classList.contains("on")) renderWCfg();
 }
 
 /* ---- 権限 ---- */
@@ -1320,7 +1477,8 @@ function applyRole(){
   document.body.classList.toggle("ro", canWrite === false);
   document.body.classList.toggle("adm", canAdmin === true);
   document.body.classList.toggle("mgr", isManager === true);
-  if (!canAdmin && $("#p-data").classList.contains("on")){
+  const wOff = isManager || canWrite === false;
+  if ((!canAdmin && $("#p-data").classList.contains("on")) || (wOff && $("#p-weight").classList.contains("on"))){
     $$("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.p==="p-input")));
     $$("section.panel").forEach(s=>s.classList.toggle("on", s.id==="p-input"));
   }
@@ -1331,9 +1489,9 @@ function applyRole(){
   if (!sn) return;
   sn.innerHTML = canAdmin
     ? "記録は Cloudflare に保存され、ログインした人全員が同じデータを見ます。アカウントは下の「アカウント管理」から追加してください。<br><br>"
-      + "・<b>監督・コーチ</b>：すべて操作できます<br>"
-      + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。<b>投球データの記録・修正・削除</b>と試合の追加ができます。打席は<b>結果だけ</b>直せます（コースや球種は直せません。打席の新規記録や削除はできません）<br>"
-      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます<br>"
+      + "・<b>監督・コーチ</b>：すべて操作できます（ウエイトは選手の記録を直す・消すことができ、新しく入れるのは本人だけです）<br>"
+      + "・<b>マネージャー</b>：全選手の記録・分析・ランキングを見られます。<b>投球データの記録・修正・削除</b>と試合の追加ができます。打席は<b>結果だけ</b>直せます（コースや球種は直せません。打席の新規記録や削除はできません）。ウエイトはランキングだけ見られます<br>"
+      + "・<b>選手</b>：<b>自分の打席だけ</b>記録・修正・削除できます。分析とランキングは全員分を見られます。投球の分析は、投手本人なら自分の分だけ見られます。ウエイトと体重は<b>自分の分だけ</b>記録でき、細かい記録と体重は本人と監督・コーチだけが見られます<br>"
       + "・<b>閲覧のみ</b>：分析を見るだけ"
     : "ログインした人全員で同じデータを見ています。";
 }
@@ -1388,7 +1546,8 @@ $$("nav.tabs button").forEach(b=>{
     $$("section.panel").forEach(s=>s.classList.toggle("on", s.id===b.dataset.p));
     window.scrollTo({top:0});
     if (b.dataset.p === "p-stats") renderStatsAll();
-    if (b.dataset.p === "p-data")  renderPlayerList();
+    if (b.dataset.p === "p-data")  { renderPlayerList(); renderWCfg(); }
+    if (b.dataset.p === "p-weight") renderWeight();
   });
 });
 function toggleTheme(){
@@ -2253,8 +2412,8 @@ async function saveFile(filename, data, mime){
 $("#btnExportCsv").addEventListener("click", ()=> saveFile(`batting_${stamp()}.csv`, "﻿"+csvText(), "text/csv;charset=utf-8"));
 $("#btnExport").addEventListener("click", ()=>{
   // 打撃・投球のすべて。読み込み（JSONを読み込む）でそのまま戻せる形
-  const out = {version:2};
-  COLLS.forEach(c => out[c] = DB[c]);
+  const out = {version:3};
+  OWN_COLLS.forEach(c => out[c] = DB[c]);
   saveFile(`teamdata_${stamp()}.json`, JSON.stringify(out, null, 2), "application/json");
 });
 $("#btnCopyCsv").addEventListener("click", async ()=>{
@@ -2271,7 +2430,7 @@ $("#fileImport").addEventListener("change", e=>{
       if (!o || !Array.isArray(o.players)) throw new Error("形式が違います");
       if (!await ask("読み込んだデータを今のデータに追加します。よろしいですか？")) return;
       let n = 0;
-      for (const c of COLLS){
+      for (const c of OWN_COLLS){
         for (const x of (o[c]||[])){
           if (!x || !x.id || CACHE[c][x.id]) continue;
           if (c==="pas") x.notes = Array.isArray(x.notes) ? x.notes : [];
@@ -2289,9 +2448,10 @@ $("#fileImport").addEventListener("change", e=>{
 $("#btnWipe").addEventListener("click", async ()=>{
   if (!await ask("保存した全データを消します。戻せません。よろしいですか？")) return;
   try{
-    for (const c of COLLS){
+    for (const c of OWN_COLLS){
       for (const id of Object.keys(CACHE[c])){ await drop(c,id); delete CACHE[c][id]; }
     }
+    CACHE.wbest = {};
     rebuild(); ST.playerId=ST.gameId=ST.pitcherId=null; F.player="";
     renderPlayers(); renderGames(); renderAll(); renderPlayerList();
     note("ioNote","消去しました。");
@@ -2315,6 +2475,48 @@ const SAMPLE_ARMS = [
   {name:"見本C 後半",   throws:"R", f1:.76, bb:.04, k:.18, hit:.18, gb:.60, fade:.36, vsL:-.03},
   {name:"見本D 対左",   throws:"R", f1:.74, bb:.05, k:.20, hit:.18, gb:.66, fade:.04, vsL:-.32}
 ];
+// ウエイトのサンプル：見本の打者4人に、12週間ぶんの記録と体重を付ける（重量は下げない進め方）
+function sampleWeight(bats, rnd, S){
+  const prof = [   // 1RMの出発点（kg）と体重
+    {bench:62, dead:105, row:58, squat:92, bulg:36, chin:9,  hlr:10, situp:22, rear:14, bw:68},
+    {bench:50, dead:88,  row:48, squat:78, bulg:30, chin:12, hlr:13, situp:26, rear:16, bw:63},
+    {bench:72, dead:120, row:66, squat:108,bulg:42, chin:6,  hlr:8,  situp:18, rear:12, bw:76},
+    {bench:45, dead:80,  row:44, squat:70, bulg:28, chin:14, hlr:15, situp:30, rear:18, bw:60}
+  ];
+  const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = Array.from({length:12}, (_,i)=>{ const d = new Date(today); d.setDate(d.getDate() - (11-i)*7 - 1); return ymd(d); });
+  return bats.map((b,bi)=>{
+    const P = prof[bi % prof.length], out = [];
+    WEX.forEach(e=>{
+      let w = null;
+      days.forEach((date,k)=>{
+        const id = wtId(b.id, date, e.id);
+        let sets;
+        if (e.kind === "w"){
+          const orm = P[e.id] * (1 + .012 * k);                       // 少しずつ強くなる
+          if (w === null) w = Math.max(e.step*2, Math.floor(orm * .80 / e.step) * e.step);
+          const cap = Math.max(1, Math.round(30 * (orm / w - 1)));      // その重さでできる回数（目安）
+          const r1 = Math.min(10, cap), r2 = Math.max(1, Math.min(10, cap - ((rnd()*2)|0)));
+          sets = [{w, r:r1}, {w, r:r2}];
+          if (r1 >= 8 && r2 >= 8) w += e.step;                          // 2セットとも8回でUP（下げない）
+        } else if (e.kind === "r"){
+          const top = Math.round(P[e.id] + k * .5 + rnd()*2);
+          const fw = e.fixed ? (e.fixed === "situp" ? 5 : 2) : null;
+          sets = [{w:fw, r:top}, {w:fw, r:Math.max(1, top - 1 - ((rnd()*3)|0))}];
+        } else {
+          sets = [{w:10, r:12}, {w:10, r:12}];
+        }
+        out.push(["wt", Object.assign({id, playerId:b.id, date, ex:e.id, sets, mode:"std", base:2, ts:Date.now()+k}, S)]);
+      });
+    });
+    days.filter((_,k)=>k % 2 === 0).forEach((date,k)=>{
+      out.push(["bw", Object.assign({id:bwId(b.id, date), playerId:b.id, date, kg: Math.round((P.bw + k*.4 + rnd()*.4)*10)/10, ts:Date.now()+k}, S)]);
+    });
+    // 体重を先に入れておく（体重比の計算に使うため）
+    return out.sort((x,y)=> (x[0]==="bw" ? 0 : 1) - (y[0]==="bw" ? 0 : 1));
+  });
+}
 $("#btnSample").addEventListener("click", async ()=>{
   const btn = $("#btnSample");
   if (btn.disabled) return;
@@ -2454,12 +2656,22 @@ $("#btnSample").addEventListener("click", async ()=>{
       part.forEach(([c,obj])=>{ CACHE[c][obj.id] = obj; });
       note("ioNote", `サンプルを作っています… ${Math.min(i+10,batch.length)} / ${batch.length}件`);
     }
+    // --- ウエイト（選手ごとに順番に保存：同じ選手の最高記録の集計がずれないように） ---
+    const wplan = sampleWeight(bats, rnd, S);
+    let wdone = 0; const wtotal = wplan.reduce((t,x)=>t + x.length, 0);
+    await Promise.all(wplan.map(async list=>{
+      for (const [c,obj] of list){
+        await put(c, obj); CACHE[c][obj.id] = obj; wdone++;
+        if (wdone % 10 === 0) note("ioNote", `ウエイトのサンプルを作っています… ${wdone} / ${wtotal}件`);
+      }
+    }));
+    await syncNow(true);
     rebuild();
     ST.playerId = bats[0].id; F.player = bats[0].id;
     PST.armId = arms[0].id;   PF.arm   = arms[0].id;
     ST.gameId = null; ST.pitcherId = null; PST.gameId = null;
     renderPlayers(); renderGames(); renderAll(); renderPlayerList();
-    note("ioNote", `サンプルを追加しました（打者4人・投手4人・8試合／${batch.length}件）。分析タブで見てみてください。`);
+    note("ioNote", `サンプルを追加しました（打者4人・投手4人・8試合・ウエイト／${batch.length + wtotal}件）。分析タブで見てみてください。`);
   }catch(e){ writeFailed(e); }
   finally{ btn.disabled = false; }
 });
@@ -2471,6 +2683,14 @@ $("#btnSampleDel").addEventListener("click", async ()=>{
   if (!await ask(`サンプルの記録を${targets.length}件すべて消します。\nご自分で入れたデータは消えません。よろしいですか？`)) return;
   const btn = $("#btnSampleDel"); btn.disabled = true;
   try{
+    // ウエイトは選手ごとに順番に消す（最高記録の集計がずれないように）
+    const wTargets = targets.filter(([c])=>c==="wt"||c==="bw");
+    const groups = {};
+    wTargets.forEach(([c,id])=>{ const pid = String(id).split("-")[0]; (groups[pid] = groups[pid] || []).push([c,id]); });
+    await Promise.all(Object.values(groups).map(async list=>{
+      for (const [c,id] of list){ await drop(c,id); delete CACHE[c][id]; }
+    }));
+    targets.splice(0, targets.length, ...targets.filter(([c])=>c!=="wt"&&c!=="bw"));
     for (let i=0;i<targets.length;i+=8){
       const part = targets.slice(i, i+8);
       await Promise.all(part.map(([c,id])=>drop(c,id)));
@@ -2498,6 +2718,10 @@ function showLogin(msg){
   setToken(null);
   USERS = [];
   COLLS.forEach(c => CACHE[c] = {}); rebuild(); lastSync = 0;
+  // ウエイトの画面も前の人の状態を残さない
+  try{ wTimerStop(); Object.assign(W, {ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null});
+       Object.keys(WTR).forEach(k=>delete WTR[k]); wCfgDraft = null;
+       const d = document.getElementById("wDone"); if (d) d.style.display = "none"; }catch(e){}
   try{ setEditing(null); setEditingBF(null); }catch(e){}
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   document.body.classList.remove("adm");
@@ -3680,9 +3904,11 @@ function renderPRank(){
 function renderStatsAll(){
   applyPitchView();
   const pitch = (statMode === "pitch") && canSeePitch();
-  $("#statBat").style.display   = pitch ? "none"  : "block";
-  $("#statPitch").style.display = pitch ? "block" : "none";
-  if (pitch) renderPStats(); else renderStats();
+  const weight = statMode === "weight";
+  $("#statBat").style.display    = (!pitch && !weight) ? "block" : "none";
+  $("#statPitch").style.display  = pitch  ? "block" : "none";
+  $("#statWeight").style.display = weight ? "block" : "none";
+  if (weight) renderWStats(); else if (pitch) renderPStats(); else renderStats();
 }
 $("#statMode").addEventListener("click", e=>{
   const c = e.target.closest(".chip"); if(!c) return;
@@ -3693,6 +3919,663 @@ $("#statMode").addEventListener("click", e=>{
 });
 $("#fPRank").addEventListener("change", e=>{ pRankKey = e.target.value; renderPRank(); });
 $("#btnPReset").addEventListener("click", ()=>{ PF.recent=PF.opp=""; renderPStats(); });
+
+
+/* ============================================================
+   ウエイトトレーニング
+   ・記録（wt）と体重（bw）は本人だけが入れる。監督・コーチは直す・消すことができる
+   ・細かい記録と体重は、本人と監督・コーチにだけ届く（サーバーで絞っている）
+   ・ランキングに使う最高記録（wbest）はサーバーが自動で作り、全員に届く
+   ============================================================ */
+const WEX = [
+  {id:"bench", name:"ベンチプレス",                 kind:"w", step:2.5},
+  {id:"dead",  name:"デッドリフト",                 kind:"w", step:2.5},
+  {id:"row",   name:"ベントオーバーロウ",           kind:"w", step:2.5},
+  {id:"squat", name:"スクワット",                   kind:"w", step:2.5},
+  {id:"bulg",  name:"ブルガリアンスクワット",       kind:"w", step:5, hint:"重さは両手のダンベルの合計、回数は片脚の回数"},
+  {id:"chin",  name:"チンニング",                   kind:"r", noW:true},
+  {id:"hlr",   name:"ハンギングレッグレイズ",       kind:"r", noW:true},
+  {id:"situp", name:"シットアップ",                 kind:"r", fixed:"situp"},
+  {id:"rear",  name:"サイドライイングリアレイズ",   kind:"r", fixed:"rear"},
+  {id:"pull",  name:"ストレートアームプルオーバー", kind:"o", step:2.5}
+];
+const WEXM = Object.fromEntries(WEX.map(e=>[e.id,e]));
+const WGROUP = [["w","重量でMAX"],["r","回数"],["o","記録だけ"]];
+// 回数 → 1RMに対する割合（NSCAの換算表）。6〜12回のセットからMAXを出す
+const WPCT = {6:.85, 7:.83, 8:.80, 9:.77, 10:.75, 11:.70, 12:.67};
+const WMODE = {
+  std:{lo:6,  hi:8,  rest:120, label:"標準 6〜8回",        restLbl:"2分"},
+  vol:{lo:10, hi:12, rest:90,  label:"ボリューム 10〜12回", restLbl:"90秒"}
+};
+const WCFG_DEF = {id:"team", mode:"std", sets:2, fixed:{situp:5, rear:null}};
+function wcfg(){
+  const c = DB.wcfg.find(x=>x.id==="team") || {};
+  return {...WCFG_DEF, ...c, fixed:{...WCFG_DEF.fixed, ...(c.fixed||{})}};
+}
+function wEst(rec){
+  let best = null;
+  (rec.sets||[]).forEach(s=>{ const w = Number(s.w), r = Number(s.r), p = WPCT[r];
+    if (p && w > 0){ const e = w / p; if (best === null || e > best) best = e; } });
+  return best;
+}
+function wReps(rec){
+  let best = null;
+  (rec.sets||[]).forEach(s=>{ const r = Number(s.r); if (r > 0 && (best === null || r > best)) best = r; });
+  return best;
+}
+function wFloor(v, step){ return v == null ? null : Math.floor(v / step + 1e-9) * step; }
+function fmtKg(v){ return v == null ? "—" : (Math.round(v*100)/100).toFixed(1).replace(/\.0$/,".0") + "kg"; }
+function fmtMD(d){ const m = String(d||"").match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? (+m[1]) + "/" + (+m[2]) : String(d||""); }
+const wKey = d => String(d).replace(/-/g,"");
+const wtId = (pid, date, ex) => `${pid}-${wKey(date)}-${ex}`;
+const bwId = (pid, date) => `${pid}-${wKey(date)}`;
+function wRecsOf(pid, ex){
+  return DB.wt.filter(r=>r.playerId===pid && (!ex || r.ex===ex))
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)) || (a.ts||0)-(b.ts||0));
+}
+function bwOf(pid){ return DB.bw.filter(r=>r.playerId===pid).sort((a,b)=>String(a.date).localeCompare(String(b.date))); }
+function wBestEst(recs){ return recs.reduce((b,r)=>{ const v = wEst(r); return v != null && (b == null || v > b) ? v : b; }, null); }
+// その記録で、次回重量UPか（記録したときの指示で判定する）
+function wUp(rec){
+  const ex = WEXM[rec.ex]; if (!ex || ex.kind !== "w") return null;
+  const m = WMODE[rec.mode] || WMODE.std, need = Number(rec.base) || 2;
+  const ws = (rec.sets||[]).map(s=>Number(s.w)).filter(w=>w>0); if (!ws.length) return null;
+  const work = Math.max(...ws);
+  const ok = rec.sets.filter(s=>Number(s.w)===work && Number(s.r) >= m.hi).length;
+  return {work, ok, need, hi:m.hi, up: ok >= need, next: ok >= need ? work + ex.step : work};
+}
+function wSetsText(rec){
+  const ex = WEXM[rec.ex] || {};
+  if (ex.noW) return rec.sets.map(s=>`${s.r}回`).join("・");
+  if (ex.fixed) return rec.sets.map(s=>`${s.r}回`).join("・") + (rec.sets[0] && rec.sets[0].w ? `（${fmtKg(Number(rec.sets[0].w))}）` : "");
+  return rec.sets.map(s=>`${(Math.round(Number(s.w)*100)/100)}×${s.r}`).join("・");
+}
+
+/* ---- 画面の状態 ---- */
+const W = { ex:"bench", date:null, sets:[], loadedId:null, admPid:null, trPid:null };
+let wRkEx = "bench", wRkMode = "max";
+
+/* ---- トレーナーからの指示 ---- */
+function renderWInstr(){
+  const c = wcfg(), m = WMODE[c.mode] || WMODE.std;
+  $("#wInstr").innerHTML =
+      `<div class="b"><div class="k">回数</div><div class="v">${m.label}</div></div>`
+    + `<div class="b"><div class="k">セット数</div><div class="v">${c.sets}セット</div></div>`
+    + `<div class="b"><div class="k">休憩の目安</div><div class="v">${m.restLbl}</div></div>`;
+  note("wInstrNote", canAdmin ? "指示はデータタブの「ウエイトの設定」で切り替えます。" : "");
+}
+
+/* ---- 種目の選択 ---- */
+function buildWExList(){
+  $("#wExList").innerHTML = WGROUP.map(([k,lbl])=>
+    `<div class="ngrp"><div class="ngl">${lbl}</div><div class="chips">`
+    + WEX.filter(e=>e.kind===k).map(e=>`<button class="chip" type="button" data-ex="${e.id}" aria-pressed="false"></button>`).join("")
+    + `</div></div>`).join("");
+  $("#wExList").addEventListener("click", e=>{
+    const b = e.target.closest("[data-ex]"); if (!b) return;
+    W.ex = b.dataset.ex; W.loadedId = null; loadWForm(); renderWeight();
+  });
+}
+function wExLabel(e){
+  const c = wcfg();
+  if (e.fixed){ const w = c.fixed[e.fixed]; return `${e.name}（${w ? fmtKg(Number(w)) : "重さ未設定"}）`; }
+  return e.name;
+}
+
+/* ---- その日・その種目の記録を入力欄に出す ---- */
+function wMe(){ return myPlayers()[0] || null; }
+function loadWForm(){
+  const me = wMe(); if (!me) return;
+  const id = wtId(me.id, W.date, W.ex), rec = CACHE.wt[id];
+  W.loadedId = rec ? id : null;
+  if (rec){ W.sets = rec.sets.map(s=>({w: s.w == null ? "" : String(s.w), r: String(s.r)})); return; }
+  const c = wcfg(), g = wGuideOf(me.id, W.ex, W.date), ex = WEXM[W.ex];
+  const w0 = ex.kind === "w" ? (g.today != null ? String(g.today) : "")
+           : (ex.kind === "o" ? (g.prevW != null ? String(g.prevW) : "") : "");
+  W.sets = Array.from({length: c.sets}, ()=>({w: w0, r: ""}));
+}
+// 今日の目安
+function wGuideOf(pid, exId, date){
+  const c = wcfg(), m = WMODE[c.mode] || WMODE.std, ex = WEXM[exId];
+  const before = wRecsOf(pid, exId).filter(r=>String(r.date) < String(date));
+  const prev = before[before.length-1] || null;
+  const out = {prev, today:null, best:null, html:""};
+  if (ex.kind === "w"){
+    const best = wBestEst(before); out.best = best;
+    const mx = best != null ? `<span style="color:var(--muted)">MAXからの目安：${m.lo}回なら${fmtKg(wFloor(best*WPCT[m.lo], ex.step))}・${m.hi}回なら${fmtKg(wFloor(best*WPCT[m.hi], ex.step))}</span>` : "";
+    let line = "";
+    if (!prev){
+      line = best == null
+        ? `初めての種目です。${m.lo}〜${m.hi}回できる重さで始めてください。保存すると推定MAXが出ます。`
+        : "";
+    } else if ((prev.mode || "std") !== c.mode && best != null){
+      out.today = wFloor(best * WPCT[m.lo], ex.step);
+      line = `今日の重量：<b>${fmtKg(out.today)}</b>（指示が「${m.label}」に変わったので、推定MAXから出した重さです）`;
+    } else {
+      const u = wUp(prev);
+      if (u){
+        out.today = u.next;
+        const reps = prev.sets.filter(s=>Number(s.w)===u.work).map(s=>s.r+"回").join("・");
+        line = `今日の重量：<b>${fmtKg(u.next)}</b>（前回 ${fmtKg(u.work)} で ${reps} → `
+          + (u.up ? `${u.need}セットとも${u.hi}回できたのでUP）` : `まだUPしない）`)
+          + `<br>${c.sets}セットとも${m.hi}回できたら、次回は <b>${fmtKg(u.next + ex.step)}</b> にUPです。`;
+      }
+    }
+    out.html = `<div class="t">${esc(ex.name)}　あなたの推定MAX（過去最高）</div>`
+      + `<div class="big">${best == null ? "—" : fmtKg(wFloor(best, ex.step))}</div>`
+      + `<div class="s">${line}${line && mx ? "<br>" : ""}${mx}</div>`;
+  } else if (ex.kind === "r"){
+    const bestR = before.reduce((b,r)=>{ const v = wReps(r); return v != null && (b == null || v > b) ? v : b; }, null);
+    const fw = ex.fixed ? c.fixed[ex.fixed] : null;
+    out.html = `<div class="t">${esc(ex.name)}　${ex.noW ? "自重" : (fw ? fmtKg(Number(fw)) + "で" : "重さはトレーナーが設定")}</div>`
+      + `<div class="big">${bestR == null ? "—" : bestR + "回"}</div>`
+      + `<div class="s">自己最高の回数です。${prev ? `前回：${prev.sets.map(s=>s.r+"回").join("・")}` : "初めての種目です。"}</div>`;
+  } else {
+    if (prev){ const ws = prev.sets.map(s=>Number(s.w)).filter(w=>w>0); out.prevW = ws.length ? Math.max(...ws) : null; }
+    out.html = `<div class="t">${esc(ex.name)}　記録だけの種目です（MAX・ランキングはありません）</div>`
+      + `<div class="s">${prev ? `前回：${wSetsText(prev)}` : "初めての種目です。"}</div>`;
+  }
+  return out;
+}
+
+/* ---- セットの入力欄 ---- */
+function renderWSets(){
+  const ex = WEXM[W.ex], c = wcfg();
+  const fw = ex.fixed ? c.fixed[ex.fixed] : null;
+  $("#wSetsLbl").innerHTML = "セット" + (ex.kind === "w" || ex.kind === "o"
+    ? `<span style="font-weight:400;color:var(--muted)">（${ex.hint ? esc(ex.hint) : "バーを含めた重さ"}）</span>`
+    : (ex.noW ? `<span style="font-weight:400;color:var(--muted)">（自重・回数だけ）</span>`
+              : `<span style="font-weight:400;color:var(--muted)">（${fw ? fmtKg(Number(fw)) + "で" : "重さ未設定"}・回数だけ）</span>`));
+  const hasW = ex.kind === "w" || ex.kind === "o";
+  $("#wSets").innerHTML = W.sets.map((s,i)=>
+    `<div class="setrow${hasW ? "" : " nw"}"><span class="n">${i+1}セット目</span>`
+    + (hasW ? `<input type="number" inputmode="decimal" step="0.25" min="0" data-wi="${i}" data-k="w" value="${esc(s.w)}" placeholder="重さ" aria-label="${i+1}セット目の重さ"><span class="x">kg×</span>` : "")
+    + `<input type="number" inputmode="numeric" step="1" min="1" data-wi="${i}" data-k="r" value="${esc(s.r)}" placeholder="回数" aria-label="${i+1}セット目の回数"><span class="u">回</span>`
+    + (W.sets.length > 1 ? `<button class="del" type="button" data-wdel="${i}" aria-label="このセットを消す">✕</button>` : `<span></span>`)
+    + `</div>`).join("");
+}
+function wReadSets(){
+  const ex = WEXM[W.ex], c = wcfg(), out = [], errs = [];
+  W.sets.forEach((s,i)=>{
+    const rs = String(s.r).trim(), ws = String(s.w).trim();
+    if (rs === "" && (ws === "" || !(ex.kind === "w" || ex.kind === "o"))) return;   // 空の行は無視
+    const r = Number(rs);
+    if (!Number.isInteger(r) || r < 1 || r > 100){ errs.push(`${i+1}セット目の回数を1〜100で入れてください。`); return; }
+    let w = null;
+    if (ex.kind === "w" || ex.kind === "o"){
+      w = Number(ws);
+      if (!(w > 0 && w <= 400)){ errs.push(`${i+1}セット目の重さを入れてください（400kgまで）。`); return; }
+    } else if (ex.fixed){ const f = c.fixed[ex.fixed]; w = f ? Number(f) : null; }
+    out.push({w, r});
+  });
+  if (!out.length && !errs.length) errs.push("少なくとも1セットは入れてください。");
+  return {sets:out, errs};
+}
+
+/* ---- 保存 ---- */
+async function wSave(){
+  const me = wMe(); if (!me) return;
+  const {sets, errs} = wReadSets();
+  if (errs.length){ note("wNote", errs.join(" ")); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(W.date || "")){ note("wNote","日付を入れてください。"); return; }
+  if (W.date > todayLocal()){ note("wNote","未来の日付には記録できません。"); return; }
+  const id = wtId(me.id, W.date, W.ex), old = CACHE.wt[id], c = wcfg(), ex = WEXM[W.ex];
+  const rec = {...(old||{}), id, playerId: me.id, date: W.date, ex: W.ex, sets,
+    mode: old ? (old.mode || "std") : c.mode, base: old ? (old.base || 2) : c.sets, ts: old ? old.ts : Date.now()};
+  // 打ち間違いの確認：これまでの最高より2割以上重い
+  const others = wRecsOf(me.id, W.ex).filter(r=>r.id !== id);
+  if (ex.kind === "w"){
+    const pb = wBestEst(others), e = wEst(rec);
+    if (pb != null && e != null && e > pb * 1.2 &&
+        !await ask(`これまでの最高（推定MAX ${fmtKg(wFloor(pb, ex.step))}）より2割以上重い記録です。\n打ち間違いではありませんか？\nこのまま保存してよければ「OK」を押してください。`)) return;
+  }
+  if (ex.kind === "r"){
+    const pb = others.reduce((b,r)=>{ const v = wReps(r); return v != null && (b == null || v > b) ? v : b; }, null), e = wReps(rec);
+    if (pb != null && e != null && e > pb * 1.5 && e - pb >= 5 &&
+        !await ask(`これまでの最高（${pb}回）より大きく多い記録です。打ち間違いではありませんか？`)) return;
+  }
+  $("#wSave").disabled = true;
+  try{
+    await put("wt", rec); CACHE.wt[id] = rec; rebuild();
+    W.loadedId = id;
+    wShowDone(rec, others);
+    note("wNote", old ? "直しました。" : "保存しました。");
+    renderWeight();
+    syncNow(true);                 // ランキングの最高記録をすぐ取り直す
+  }catch(e){ writeFailed(e); }
+  finally{ $("#wSave").disabled = false; }
+}
+function wShowDone(rec, others){
+  const ex = WEXM[rec.ex], el = $("#wDone");
+  let h = `<div class="h">保存しました（${fmtMD(rec.date)}・${esc(ex.name)}）</div>`;
+  if (ex.kind === "w"){
+    const e = wEst(rec), pb = wBestEst(others);
+    if (e == null){
+      h += `<div class="s">6〜12回のセットが無いので、推定MAXは出ません（記録は残ります）。</div>`;
+    } else {
+      const tag = pb == null ? "はじめての記録です。"
+        : (wFloor(e, ex.step) > wFloor(pb, ex.step) ? "過去最高を更新しました！"
+        : (wFloor(e, ex.step) === wFloor(pb, ex.step) ? "過去最高タイ。" : `過去最高は ${fmtKg(wFloor(pb, ex.step))}。`));
+      const src = rec.sets.find(s=>Number(s.w) > 0 && WPCT[Number(s.r)] && Math.abs(Number(s.w)/WPCT[Number(s.r)] - e) < 1e-9);
+      h += `<div class="row2"><span>今日の推定MAX</span><span class="big">${fmtKg(wFloor(e, ex.step))}</span></div>`
+        + `<div class="s">${src ? `${fmtKg(Number(src.w))} × ${src.r}回から計算。` : ""}${tag}</div>`;
+    }
+    const u = wUp(rec);
+    if (u) h += u.up
+      ? `<span class="up">▲ ${u.need}セットとも${u.hi}回できました。次回は ${fmtKg(u.next)} にUP</span>`
+      : `<span class="up keep">次回も ${fmtKg(u.work)} で（${u.hi}回できたセット ${u.ok}／${u.need}）</span>`;
+  } else if (ex.kind === "r"){
+    const e = wReps(rec), pb = others.reduce((b,r)=>{ const v = wReps(r); return v != null && (b == null || v > b) ? v : b; }, null);
+    h += `<div class="row2"><span>今日の最高</span><span class="big">${e}回</span></div>`
+      + `<div class="s">${pb == null ? "はじめての記録です。" : (e > pb ? "自己最高を更新しました！" : `自己最高は ${pb}回。`)}</div>`;
+  } else {
+    h += `<div class="s">${wSetsText(rec)}</div>`;
+  }
+  el.innerHTML = h; el.style.display = "block";
+}
+async function wDeleteDay(){
+  const me = wMe(); if (!me || !W.loadedId) return;
+  if (!await ask(`${fmtMD(W.date)}の「${WEXM[W.ex].name}」の記録を消します。よろしいですか？`)) return;
+  try{ await drop("wt", W.loadedId); delete CACHE.wt[W.loadedId]; rebuild();
+       W.loadedId = null; $("#wDone").style.display = "none"; loadWForm(); renderWeight();
+       note("wNote","消しました。"); syncNow(true); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ---- 休憩タイマー（秒数は本人が入れる。前回の秒数を覚えておく） ---- */
+let wTimerId = null, wEnd = 0, wLock = null, wAudio = null;
+function wTimerStart(){
+  const sec = parseInt($("#wRest").value, 10);
+  if (!(sec >= 5 && sec <= 900)){ note("wTimerNote","休憩の秒数を5〜900秒で入れてください。"); return; }
+  try{ localStorage.setItem("bb_rest", String(sec)); }catch(e){}
+  // 音は、ボタンを押したときに準備しておく（スマホは操作なしで音を鳴らせないため）
+  try{ wAudio = wAudio || new (window.AudioContext || window.webkitAudioContext)(); if (wAudio.resume) wAudio.resume(); }catch(e){}
+  wEnd = Date.now() + sec * 1000;
+  clearInterval(wTimerId); wTimerId = setInterval(wTick, 250); wTick();
+  $("#wTimerBtn").textContent = "止める";
+  $("#wTimer").classList.remove("ring");
+  wKeepAwake(true);
+  note("wTimerNote","休憩中です。0になったら音で知らせます（タイマー中は画面を消さないでください）。");
+}
+function wTimerStop(){
+  clearInterval(wTimerId); wTimerId = null;
+  $("#wTimerBtn").textContent = "スタート";
+  wKeepAwake(false);
+}
+function wTick(){
+  const left = Math.max(0, Math.ceil((wEnd - Date.now()) / 1000));
+  $("#wCd").textContent = Math.floor(left/60) + ":" + String(left%60).padStart(2,"0");
+  if (left <= 0 && wTimerId){
+    wTimerStop(); wBeep();
+    $("#wTimer").classList.add("ring");
+    note("wTimerNote","休憩が終わりました。次のセットへ。");
+  }
+}
+function wBeep(){
+  try{
+    const a = wAudio; if (!a) return;
+    [0, .35, .7].forEach(t=>{
+      const o = a.createOscillator(), g = a.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(a.destination);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.35, a.currentTime + t + .02);
+      g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t + .26);
+      o.start(a.currentTime + t); o.stop(a.currentTime + t + .3);
+    });
+  }catch(e){}
+  try{ if (navigator.vibrate) navigator.vibrate([300,150,300]); }catch(e){}   // 振動はAndroidだけ
+}
+function wKeepAwake(on){
+  try{
+    if (on && "wakeLock" in navigator && !wLock)
+      navigator.wakeLock.request("screen").then(l=>{ wLock = l; l.addEventListener("release", ()=>{ wLock = null; }); }).catch(()=>{});
+    if (!on && wLock){ wLock.release(); wLock = null; }
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", ()=>{
+  if (!document.hidden && wTimerId){ wKeepAwake(true); wTick(); }
+});
+
+/* ---- ウエイトタブ ---- */
+function renderWeight(){
+  if (!$("#p-weight")) return;
+  renderWInstr();
+  const me = wMe();
+  const recCards = ["#cardWRec","#cardWToday","#cardWBw"];
+  recCards.forEach(s=>$(s).style.display = me ? "" : "none");
+  $("#cardWNoSelf").style.display = (!me && !canAdmin) ? "" : "none";
+  $("#cardWAdmin").style.display = canAdmin ? "" : "none";
+  if (canAdmin) renderWAdmin();
+  if (!me) return;
+  if (!W.date) W.date = todayLocal();
+  $("#wDate").value = W.date;
+  $("#wDate").max = todayLocal();
+  $$("#wExList [data-ex]").forEach(b=>{
+    b.textContent = wExLabel(WEXM[b.dataset.ex]);
+    b.setAttribute("aria-pressed", String(b.dataset.ex === W.ex));
+  });
+  if (!W.sets.length) loadWForm();
+  const g = wGuideOf(me.id, W.ex, W.date);
+  $("#wGuide").innerHTML = g.html; $("#wGuide").style.display = "block";
+  renderWSets();
+  $("#wRecTitle").textContent = W.loadedId ? "この日の記録を直す" : "記録する";
+  $("#wSave").textContent = W.loadedId ? "直した内容を保存" : "この記録を保存";
+  $("#wDel").style.display = W.loadedId ? "" : "none";
+  if (!$("#wRest").value){ try{ const v = localStorage.getItem("bb_rest"); if (v) $("#wRest").value = v; }catch(e){} }
+  // この日の記録
+  const day = DB.wt.filter(r=>r.playerId===me.id && r.date===W.date)
+    .sort((a,b)=>WEX.findIndex(e=>e.id===a.ex) - WEX.findIndex(e=>e.id===b.ex));
+  $("#wTodayTitle").textContent = `${fmtMD(W.date)}の記録`;
+  $("#wTodayList").innerHTML = day.length
+    ? '<div class="palist">' + day.map(r=>{
+        const ex = WEXM[r.ex] || {name:r.ex};
+        const v = ex.kind === "w" && wEst(r) != null ? fmtKg(wFloor(wEst(r), ex.step)) : (ex.kind === "r" ? wReps(r) + "回" : "");
+        return `<div class="pa"><div class="bd" data-wopen="${r.ex}"><div class="t">${esc(ex.name)}</div>`
+          + `<div class="s">${esc(wSetsText(r))}${v ? "　→ " + (ex.kind === "w" ? "推定MAX " : "最高 ") + v : ""}</div></div></div>`;
+      }).join("") + "</div>"
+    : '<div class="empty-note">この日の記録はまだありません</div>';
+  // 体重
+  const bws = bwOf(me.id), today = bws.find(x=>x.date===W.date), last = bws[bws.length-1];
+  if (document.activeElement !== $("#wBwKg")) $("#wBwKg").value = today ? today.kg : "";
+  $("#wBwKg").placeholder = last ? `前回 ${last.kg}kg（${fmtMD(last.date)}）` : "例）68.5";
+}
+async function wBwSave(){
+  const me = wMe(); if (!me) return;
+  const kg = Number($("#wBwKg").value);
+  if (!(kg >= 30 && kg <= 200)){ note("wBwNote","体重を30〜200kgで入れてください。"); return; }
+  if (W.date > todayLocal()){ note("wBwNote","未来の日付には記録できません。"); return; }
+  const id = bwId(me.id, W.date), old = CACHE.bw[id];
+  const rec = {...(old||{}), id, playerId: me.id, date: W.date, kg: Math.round(kg*10)/10, ts: old ? old.ts : Date.now()};
+  try{ await put("bw", rec); CACHE.bw[id] = rec; rebuild(); renderWeight();
+       note("wBwNote", `${fmtMD(W.date)}の体重を${old ? "直しました" : "記録しました"}（${rec.kg}kg）。体重の数字とグラフは、本人と監督・コーチだけが見られます。`);
+       syncNow(true); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ---- 監督・コーチ：選手の記録を見る・直す ---- */
+function wPlayersWithData(){
+  const ids = new Set([...DB.wt.map(r=>r.playerId), ...DB.bw.map(r=>r.playerId)]);
+  return DB.players.filter(p=>ids.has(p.id)).sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+}
+function renderWAdmin(){
+  const list = wPlayersWithData(), sel = $("#wAdmPlayer");
+  if (!list.some(p=>p.id===W.admPid)) W.admPid = list.length ? list[0].id : null;
+  sel.innerHTML = list.length ? list.map(p=>pOpt(p.id, p.name, W.admPid)).join("") : '<option value="">まだ記録がありません</option>';
+  renderWTrend("wAdmBody", W.admPid, true);
+}
+
+/* ---- 推移（グラフと記録の一覧）：本人と監督・コーチだけ ---- */
+const WTR = {};     // 表示先ごとの状態（選んでいる種目・直している記録）
+function wNiceTicks(lo, hi){
+  if (lo === hi){ lo -= 1; hi += 1; }
+  const span = hi - lo, steps = [0.5,1,2,2.5,5,10,20,25,50,100];
+  const st = steps.find(s=>span / s <= 5) || 100;
+  const a = Math.floor(lo / st) * st, b = Math.ceil(hi / st) * st;
+  const t = []; for (let v = a; v <= b + 1e-9; v += st) t.push(Math.round(v*100)/100);
+  return t;
+}
+function wChart(points, unit){
+  // points: [[日付, 値], ...]（日付の古い順）
+  if (!points.length) return '<div class="empty-note">まだ記録がありません</div>';
+  const W0 = 340, H0 = 180, L = 40, R = 16, T = 18, B = 26, pw = W0 - L - R, ph = H0 - T - B;
+  const ts = points.map(p=>new Date(p[0] + "T00:00:00").getTime());
+  const t0 = Math.min(...ts), t1 = Math.max(...ts);
+  const vals = points.map(p=>p[1]);
+  const ticks = wNiceTicks(Math.min(...vals), Math.max(...vals));
+  const y0 = ticks[0], y1 = ticks[ticks.length-1];
+  const X = t => t1 === t0 ? L + pw/2 : L + pw * (t - t0) / (t1 - t0);
+  const Y = v => T + ph * (1 - (v - y0) / (y1 - y0 || 1));
+  const xs = ts.map(X), ys = vals.map(Y);
+  let g = ticks.map(v=>`<line x1="${L}" x2="${W0-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="gl"/>`
+      + `<text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" class="ax" text-anchor="end">${v}</text>`).join("");
+  const lbl = [0, Math.floor((points.length-1)/2), points.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+  g += lbl.map(i=>`<text x="${xs[i].toFixed(1)}" y="${H0-8}" class="ax" text-anchor="middle">${fmtMD(points[i][0])}</text>`).join("");
+  const path = points.length > 1 ? `<path d="M${xs.map((x,i)=>x.toFixed(1)+","+ys[i].toFixed(1)).join(" L")}" class="ln"/>` : "";
+  const dots = xs.map((x,i)=>`<circle cx="${x.toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4" class="dt"/>`).join("");
+  const li = points.length - 1, fmt = v => unit === "kg" ? fmtKg(v) : v + unit;
+  const lastLbl = `<text x="${Math.min(xs[li], W0-R).toFixed(1)}" y="${(ys[li]-10).toFixed(1)}" class="lv" text-anchor="end">${fmt(vals[li])}</text>`;
+  const data = esc(JSON.stringify(points.map((p,i)=>[fmtMD(p[0]), fmt(p[1]), +(xs[i]/W0*100).toFixed(2), +(ys[i]/H0*100).toFixed(2)])));
+  return `<div class="wchart" data-pts="${data}"><svg viewBox="0 0 ${W0} ${H0}" role="img" aria-label="推移のグラフ">${g}${path}${dots}${lastLbl}</svg>`
+    + `<div class="wtip" style="display:none"></div></div>`;
+}
+// グラフに指を当てると、いちばん近い日の値を出す
+document.addEventListener("pointermove", e=>{
+  const box = e.target.closest && e.target.closest(".wchart"); if (!box) return;
+  const pts = JSON.parse(box.dataset.pts || "[]"); if (!pts.length) return;
+  const r = box.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 100;
+  let k = 0; pts.forEach((p,i)=>{ if (Math.abs(p[2]-x) < Math.abs(pts[k][2]-x)) k = i; });
+  const tip = box.querySelector(".wtip");
+  tip.textContent = `${pts[k][0]}　${pts[k][1]}`;
+  tip.style.display = "block";
+  tip.style.left = Math.min(Math.max(pts[k][2], 12), 80) + "%";
+  tip.style.top = Math.max(pts[k][3] - 16, 0) + "%";
+});
+document.addEventListener("pointerleave", e=>{
+  if (e.target && e.target.classList && e.target.classList.contains("wchart")) e.target.querySelector(".wtip").style.display = "none";
+}, true);
+
+function renderWTrend(hostId, pid, editable){
+  const host = document.getElementById(hostId); if (!host) return;
+  if (!pid){ host.innerHTML = '<div class="empty-note">まだ記録がありません</div>'; return; }
+  const st = WTR[hostId] = WTR[hostId] || {ex:null, edit:null, bwEdit:null};
+  const have = WEX.filter(e=>DB.wt.some(r=>r.playerId===pid && r.ex===e.id));
+  if (!st.ex || !WEXM[st.ex]) st.ex = have.length ? have[0].id : "bench";
+  const ex = WEXM[st.ex], recs = wRecsOf(pid, st.ex);
+  let pts, ttl, unit, valOf;
+  if (ex.kind === "w"){ ttl = "推定MAX（過去最高）の推移・kg"; unit = "kg"; valOf = r => { const v = wEst(r); return v == null ? null : wFloor(v, ex.step); }; }
+  else if (ex.kind === "r"){ ttl = "自己最高の回数の推移"; unit = "回"; valOf = r => wReps(r); }
+  else { ttl = "その日の重さ（kg）"; unit = "kg"; valOf = r => { const ws = r.sets.map(s=>Number(s.w)).filter(w=>w>0); return ws.length ? Math.max(...ws) : null; }; }
+  pts = recs.map(r=>[r.date, valOf(r)]).filter(p=>p[1] != null);
+  const best = pts.reduce((b,p)=>b == null || p[1] > b ? p[1] : b, null);
+  // MAXと回数は「過去最高」の線にする（ランキングと同じ考え方。一度上げた記録は下がらない）
+  if (ex.kind !== "o"){ let m = null; pts = pts.map(([d,v])=>{ m = m == null || v > m ? v : m; return [d, m]; }); }
+  const fmt = v => v == null ? "—" : (unit === "kg" ? fmtKg(v) : v + unit);
+  const rows = recs.slice().reverse().map(r=>{
+    const v = valOf(r);
+    if (editable && st.edit === r.id) return `<tr class="wed"><td colspan="4">${wEditor(r)}</td></tr>`;
+    return `<tr><td>${fmtMD(r.date)}</td><td>${esc(wSetsText(r))}</td>`
+      + `<td class="r">${fmt(v)}${v != null && v === best && ex.kind !== "o" ? '<span class="prk">最高</span>' : ""}</td>`
+      + `<td class="r">${editable ? `<button class="lnk" type="button" data-wedit="${r.id}">直す</button><button class="lnk dgr" type="button" data-wdrop="${r.id}">消す</button>` : ""}</td></tr>`;
+  }).join("");
+  const bws = bwOf(pid);
+  const bwRows = bws.slice().reverse().map(b=> editable && st.bwEdit === b.id
+    ? `<tr class="wed"><td colspan="3"><div class="row"><div style="flex:2"><input type="number" inputmode="decimal" step="0.1" data-bwv="${b.id}" value="${b.kg}"></div>`
+      + `<div style="flex:1"><button class="btn mini" type="button" data-bwsave="${b.id}">保存</button></div>`
+      + `<div style="flex:1"><button class="btn sec mini" type="button" data-bwcancel="1">やめる</button></div></div></td></tr>`
+    : `<tr><td>${fmtMD(b.date)}</td><td class="r">${b.kg}kg</td><td class="r">${editable ? `<button class="lnk" type="button" data-bwedit="${b.id}">直す</button><button class="lnk dgr" type="button" data-bwdrop="${b.id}">消す</button>` : ""}</td></tr>`).join("");
+  host.innerHTML =
+      `<label class="fld">種目</label><select data-wtrex="1">${WEX.map(e=>pOpt(e.id, e.name + (have.some(h=>h.id===e.id) ? "" : "（記録なし）"), st.ex)).join("")}</select>`
+    + `<div class="ngl" style="margin-top:12px">${ttl}</div>${wChart(pts, unit)}`
+    + (pts.length ? `<div class="lg">${ex.kind === "o" ? "点は記録した日。" : "その日までの最高を線でつないでいます（日ごとの値は下の記録に出ています）。"}指を当てるとその日の値が出ます。</div>` : "")
+    + `<div class="ngl" style="margin-top:12px">記録</div>`
+    + (recs.length ? `<div class="scrollx"><table class="hist"><thead><tr><th>日付</th><th>セット${ex.kind === "w" || ex.kind === "o" ? "（kg×回）" : ""}</th><th class="r">${ex.kind === "w" ? "推定MAX" : (ex.kind === "r" ? "最高" : "重さ")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+                   : '<div class="empty-note">この種目の記録はまだありません</div>')
+    + `<div class="ngl" style="margin-top:16px">体重（kg）<span style="font-weight:400">　本人と監督・コーチだけが見られます</span></div>`
+    + wChart(bws.map(b=>[b.date, Number(b.kg)]), "kg")
+    + (bws.length ? `<div class="scrollx"><table class="hist"><tbody>${bwRows}</tbody></table></div>` : "");
+  // 操作
+  host.querySelector("[data-wtrex]").addEventListener("change", e=>{ st.ex = e.target.value; st.edit = null; renderWTrend(hostId, pid, editable); });
+  host.querySelectorAll("[data-wedit]").forEach(b=>b.addEventListener("click", ()=>{ st.edit = b.dataset.wedit; renderWTrend(hostId, pid, editable); }));
+  host.querySelectorAll("[data-wcancel]").forEach(b=>b.addEventListener("click", ()=>{ st.edit = null; renderWTrend(hostId, pid, editable); }));
+  host.querySelectorAll("[data-wsave]").forEach(b=>b.addEventListener("click", ()=>wEditSave(hostId, pid, editable, b.dataset.wsave)));
+  host.querySelectorAll("[data-waddset]").forEach(b=>b.addEventListener("click", ()=>{
+    const box = b.closest(".weditor"); const n = box.querySelectorAll(".setrow").length;
+    if (n >= 10) return;
+    const tmp = document.createElement("div"); tmp.innerHTML = wEditorRow(CACHE.wt[b.dataset.waddset], n, {w:"", r:""});
+    box.querySelector(".wrows").appendChild(tmp.firstChild);
+  }));
+  host.querySelectorAll("[data-wdrop]").forEach(b=>b.addEventListener("click", async ()=>{
+    const r = CACHE.wt[b.dataset.wdrop]; if (!r) return;
+    if (!await ask(`${fmtMD(r.date)}の「${(WEXM[r.ex]||{}).name}」の記録を消します。よろしいですか？`)) return;
+    try{ await drop("wt", r.id); delete CACHE.wt[r.id]; rebuild(); renderWTrend(hostId, pid, editable); if ($("#p-weight").classList.contains("on")) renderWeight(); syncNow(true); }
+    catch(e){ writeFailed(e); }
+  }));
+  host.querySelectorAll("[data-bwedit]").forEach(b=>b.addEventListener("click", ()=>{ st.bwEdit = b.dataset.bwedit; renderWTrend(hostId, pid, editable); }));
+  host.querySelectorAll("[data-bwcancel]").forEach(b=>b.addEventListener("click", ()=>{ st.bwEdit = null; renderWTrend(hostId, pid, editable); }));
+  host.querySelectorAll("[data-bwsave]").forEach(b=>b.addEventListener("click", async ()=>{
+    const old = CACHE.bw[b.dataset.bwsave]; if (!old) return;
+    const kg = Number(host.querySelector(`[data-bwv="${b.dataset.bwsave}"]`).value);
+    if (!(kg >= 30 && kg <= 200)){ await tell("体重を30〜200kgで入れてください。"); return; }
+    const rec = {...old, kg: Math.round(kg*10)/10};
+    try{ await put("bw", rec); CACHE.bw[rec.id] = rec; rebuild(); st.bwEdit = null; renderWTrend(hostId, pid, editable); syncNow(true); }
+    catch(e){ writeFailed(e); }
+  }));
+  host.querySelectorAll("[data-bwdrop]").forEach(b=>b.addEventListener("click", async ()=>{
+    const r = CACHE.bw[b.dataset.bwdrop]; if (!r) return;
+    if (!await ask(`${fmtMD(r.date)}の体重（${r.kg}kg）を消します。よろしいですか？`)) return;
+    try{ await drop("bw", r.id); delete CACHE.bw[r.id]; rebuild(); renderWTrend(hostId, pid, editable); syncNow(true); }
+    catch(e){ writeFailed(e); }
+  }));
+}
+function wEditorRow(rec, i, s){
+  const ex = WEXM[rec.ex] || {}, hasW = ex.kind === "w" || ex.kind === "o";
+  return `<div class="setrow${hasW ? "" : " nw"}"><span class="n">${i+1}セット目</span>`
+    + (hasW ? `<input type="number" inputmode="decimal" step="0.25" data-ek="w" value="${s.w == null ? "" : s.w}"><span class="x">kg×</span>` : "")
+    + `<input type="number" inputmode="numeric" step="1" data-ek="r" value="${s.r}"><span class="u">回</span><span></span></div>`;
+}
+function wEditor(rec){
+  return `<div class="weditor"><div class="ngl">${fmtMD(rec.date)}　${esc((WEXM[rec.ex]||{}).name || rec.ex)}を直す（空にしたセットは消えます）</div>`
+    + `<div class="wrows">${rec.sets.map((s,i)=>wEditorRow(rec, i, s)).join("")}</div>`
+    + `<div class="btnrow"><button class="btn sec mini" type="button" data-waddset="${rec.id}">＋ セット</button>`
+    + `<button class="btn mini" type="button" data-wsave="${rec.id}">保存</button>`
+    + `<button class="btn sec mini" type="button" data-wcancel="1">やめる</button></div></div>`;
+}
+async function wEditSave(hostId, pid, editable, id){
+  const old = CACHE.wt[id]; if (!old) return;
+  const ex = WEXM[old.ex] || {}, hasW = ex.kind === "w" || ex.kind === "o";
+  const box = document.getElementById(hostId).querySelector(".weditor");
+  const sets = [];
+  for (const row of box.querySelectorAll(".setrow")){
+    const rv = row.querySelector('[data-ek="r"]').value.trim(), wEl = row.querySelector('[data-ek="w"]');
+    const wv = wEl ? wEl.value.trim() : "";
+    if (rv === "" && wv === "") continue;
+    const r = Number(rv);
+    if (!Number.isInteger(r) || r < 1 || r > 100){ await tell("回数を1〜100で入れてください。"); return; }
+    let w = hasW ? Number(wv) : (old.sets[0] ? old.sets[0].w : null);
+    if (hasW && !(w > 0 && w <= 400)){ await tell("重さを入れてください（400kgまで）。"); return; }
+    if (!hasW && w === undefined) w = null;
+    sets.push({w, r});
+  }
+  if (!sets.length){ await tell("少なくとも1セットは入れてください。記録ごと消すときは「消す」を押してください。"); return; }
+  const rec = {...old, sets};
+  try{ await put("wt", rec); CACHE.wt[id] = rec; rebuild(); WTR[hostId].edit = null;
+       renderWTrend(hostId, pid, editable); if ($("#p-weight").classList.contains("on")) renderWeight(); syncNow(true); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ---- 分析：ウエイト ---- */
+function renderWRank(){
+  const exSel = $("#wRkEx");
+  exSel.innerHTML = WEX.filter(e=>e.kind !== "o").map(e=>pOpt(e.id, e.name, wRkEx)).join("");
+  const ex = WEXM[wRkEx];
+  const isW = ex.kind === "w";
+  $("#wRkMode").style.display = isW ? "" : "none";
+  if (!isW) wRkMode = "max";
+  $$("#wRkMode [data-v]").forEach(s=>s.classList.toggle("on", s.dataset.v === wRkMode));
+  $("#wRkTitle").innerHTML = isW ? (wRkMode === "ratio" ? "体重比ランキング" : "推定MAXランキング") : "回数ランキング";
+  $("#wRkHint").textContent = isW ? (wRkMode === "ratio" ? "推定MAX÷その日の体重" : "過去最高・" + ex.step + "kg単位") : "自己最高の回数";
+  const mine = new Set(myPlayers().map(p=>p.id));
+  const name = id => (DB.players.find(p=>p.id===id) || {}).name;
+  let rows = DB.wbest.filter(b=>b.ex === wRkEx && name(b.playerId));
+  let noBw = [];
+  let valOf, shown;
+  if (!isW){ valOf = b => b.reps; shown = b => b.reps + "回"; }
+  else if (wRkMode === "ratio"){
+    noBw = rows.filter(b=>!(b.ratio > 0)); rows = rows.filter(b=>b.ratio > 0);
+    valOf = b => Math.floor(b.ratio * 100 + 1e-9) / 100; shown = b => valOf(b).toFixed(2) + "倍";
+  } else { valOf = b => wFloor(b.est, ex.step); shown = b => fmtKg(valOf(b)); }
+  rows.sort((a,b)=>valOf(b) - valOf(a) || (isW ? b.est - a.est : 0) || name(a.playerId).localeCompare(name(b.playerId),"ja"));
+  const top = rows.length ? valOf(rows[0]) : 1;
+  let rank = 0, prev = null;
+  const li = rows.map((b,i)=>{
+    const v = valOf(b); if (v !== prev){ rank = i + 1; prev = v; }
+    return `<li${mine.has(b.playerId) ? ' class="me"' : ""}><span class="no">${rank}</span>`
+      + `<span><div class="nm">${esc(name(b.playerId))}</div><div class="bar" style="width:${Math.max(4, v / (top || 1) * 100).toFixed(0)}%"></div></span>`
+      + `<span class="val">${shown(b)}</span></li>`;
+  }).join("");
+  const nb = noBw.map(b=>`<li${mine.has(b.playerId) ? ' class="me"' : ""}><span class="no">—</span><span><div class="nm">${esc(name(b.playerId))}</div></span><span class="val dim">体重未記録</span></li>`).join("");
+  $("#wRank").innerHTML = (li || '<li class="empty"><span></span><span class="dim">まだ記録がありません</span><span></span></li>') + nb;
+  note("wRkNote", isW
+    ? (wRkMode === "ratio"
+        ? "最高記録を出した日の体重（その日以前でいちばん近い記録）で割っています。体重を記録していない人は下にまとめています。"
+        : "6〜12回のセットから計算した推定MAXの過去最高です。全員分を表示しています。")
+    : "これまでの最高回数です。全員分を表示しています。");
+}
+function renderWStats(){
+  renderWRank();
+  const me = wMe(), card = $("#cardWTrend");
+  if (canAdmin){
+    card.style.display = "";
+    $("#wTrTitle").textContent = "選手の推移";
+    $("#wTrPlayerRow").style.display = "";
+    const list = wPlayersWithData();
+    if (!list.some(p=>p.id===W.trPid)) W.trPid = (me && list.some(p=>p.id===me.id)) ? me.id : (list[0] ? list[0].id : null);
+    $("#wTrPlayer").innerHTML = list.length ? list.map(p=>pOpt(p.id, p.name, W.trPid)).join("") : '<option value="">まだ記録がありません</option>';
+    renderWTrend("wTrend", W.trPid, true);
+  } else if (me && ME && ME.role === "player"){
+    card.style.display = "";
+    $("#wTrTitle").textContent = "自分の推移";
+    $("#wTrPlayerRow").style.display = "none";
+    renderWTrend("wTrend", me.id, true);
+  } else {
+    card.style.display = "none";
+  }
+}
+
+/* ---- 設定（監督・コーチ） ---- */
+let wCfgDraft = null;
+function renderWCfg(){
+  if (!$("#cardWCfg")) return;
+  const c = wcfg(); wCfgDraft = wCfgDraft || {mode:c.mode, sets:c.sets};
+  chipSet("#wCfgMode", wCfgDraft.mode); chipSet("#wCfgSets", String(wCfgDraft.sets));
+  if (document.activeElement !== $("#wCfgSitup")) $("#wCfgSitup").value = c.fixed.situp == null ? "" : c.fixed.situp;
+  if (document.activeElement !== $("#wCfgRear"))  $("#wCfgRear").value  = c.fixed.rear  == null ? "" : c.fixed.rear;
+}
+async function wCfgSave(){
+  const num = v => { const s = String(v).trim(); if (s === "") return null; const n = Number(s); return n > 0 && n <= 100 ? n : NaN; };
+  const su = num($("#wCfgSitup").value), re = num($("#wCfgRear").value);
+  if (Number.isNaN(su) || Number.isNaN(re)){ note("wCfgNote","重さは0より大きく100kgまでで入れてください（空にすると未設定）。"); return; }
+  const old = DB.wcfg.find(x=>x.id==="team") || {};
+  const rec = {...old, id:"team", mode: wCfgDraft.mode, sets: Number(wCfgDraft.sets), fixed:{situp: su, rear: re}};
+  try{ await put("wcfg", rec); CACHE.wcfg.team = rec; rebuild(); wCfgDraft = null; renderWCfg();
+       W.sets = []; if ($("#p-weight").classList.contains("on")) renderWeight();
+       const m = WMODE[rec.mode];
+       note("wCfgNote", `保存しました。いまの指示：${m.label}・${rec.sets}セット・休憩の目安${m.restLbl}。全員の画面に反映されます。`); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ---- つなぎこみ ---- */
+buildWExList();
+$("#wDate").addEventListener("change", e=>{ W.date = e.target.value || todayLocal(); W.loadedId = null; $("#wDone").style.display = "none"; loadWForm(); renderWeight(); });
+$("#wSets").addEventListener("input", e=>{
+  const t = e.target; if (!t.dataset.wi) return;
+  W.sets[+t.dataset.wi][t.dataset.k] = t.value;
+});
+$("#wSets").addEventListener("click", e=>{
+  const b = e.target.closest("[data-wdel]"); if (!b) return;
+  W.sets.splice(+b.dataset.wdel, 1); renderWSets();
+});
+$("#wAddSet").addEventListener("click", ()=>{
+  if (W.sets.length >= 10) return;
+  const last = W.sets[W.sets.length-1];
+  W.sets.push({w: last ? last.w : "", r: ""}); renderWSets();
+});
+$("#wSave").addEventListener("click", wSave);
+$("#wDel").addEventListener("click", wDeleteDay);
+$("#wTimerBtn").addEventListener("click", ()=>{ if (wTimerId) { wTimerStop(); note("wTimerNote","止めました。"); } else wTimerStart(); });
+$("#wBwSave").addEventListener("click", wBwSave);
+$("#wTodayList").addEventListener("click", e=>{
+  const b = e.target.closest("[data-wopen]"); if (!b) return;
+  W.ex = b.dataset.wopen; W.loadedId = null; loadWForm(); renderWeight();
+  $("#cardWRec").scrollIntoView({behavior:"smooth", block:"start"});
+});
+$("#wAdmPlayer").addEventListener("change", e=>{ W.admPid = e.target.value; WTR.wAdmBody = null; renderWAdmin(); });
+$("#wTrPlayer").addEventListener("change", e=>{ W.trPid = e.target.value; WTR.wTrend = null; renderWStats(); });
+$("#wRkEx").addEventListener("change", e=>{ wRkEx = e.target.value; renderWRank(); });
+$("#wRkMode").addEventListener("click", e=>{ const s = e.target.closest("[data-v]"); if (!s) return; wRkMode = s.dataset.v; renderWRank(); });
+$("#wCfgMode").addEventListener("click", e=>{ const b = e.target.closest(".chip"); if (!b) return; wCfgDraft = {...(wCfgDraft||wcfg()), mode:b.dataset.v}; renderWCfg(); });
+$("#wCfgSets").addEventListener("click", e=>{ const b = e.target.closest(".chip"); if (!b) return; wCfgDraft = {...(wCfgDraft||wcfg()), sets:Number(b.dataset.v)}; renderWCfg(); });
+$("#wCfgSave").addEventListener("click", wCfgSave);
 
 buildZoneGrid(); buildBreakGrid(); buildResults(); buildBFResults();
 rebuild(); renderPlayers(); renderGames(); renderPitchers(); renderAll();
