@@ -647,8 +647,9 @@ body.adm nav.tabs button.ao{display:flex}
     <div id="firstArmWrap" style="display:none;margin-bottom:14px">
       <label class="fld" for="selFirstArm">初球を投げた投手</label>
       <select id="selFirstArm"></select>
-      <div class="note">結果はいま選んでいる投手に付きます。初球ストライク率だけ、こちらの投手に付きます。</div>
+      <div class="note">結果はいま選んでいる投手に付きます。初球ストライク率だけ、こちらの投手（交代前の投手）に付きます。</div>
     </div>
+    <div class="note" id="reliefHint" style="display:none;margin:-4px 0 12px"></div>
     <label class="fld">① 初球</label>
     <div class="chips" id="selFirst">
       <button class="chip" type="button" data-v="strike" aria-pressed="false">ストライク</button>
@@ -3548,8 +3549,27 @@ function fillBatsSel(){
     ? `この打席から、${PST.inning}回以降の${PST.lineup||""}番は${OPPB_LBL[PST.bats]}として数えます。`
     : "";
 }
+// この試合で、いまの投手の前に投げていた投手（打席の途中で代わったときの初球の投手）
+function prevArmInGame(gid, cur){
+  const seq = DB.bf.filter(x=>x.gameId===gid && !x.stub && (!PST.editId || x.id!==PST.editId))
+    .sort((a,b)=> Number(a.inning)-Number(b.inning) || (a.order||0)-(b.order||0) || (a.ts||0)-(b.ts||0));
+  for (let i = seq.length-1; i >= 0; i--) if (seq[i].armId !== cur) return seq[i].armId;
+  const inn = DB.inn.filter(x=>x.gameId===gid && x.armId!==cur).sort((a,b)=>Number(b.inning)-Number(a.inning));
+  return inn.length ? inn[0].armId : null;
+}
+function armName(id){ return (DB.arms.find(a=>a.id===id)||{}).name || "前の投手"; }
 function fillRelief(){
   const on = !!PST.firstArmId;
+  // 代わったばかりの投手の最初の打者なら、押し忘れないように知らせる
+  const hint = $("#reliefHint");
+  const prev = PST.gameId && PST.armId ? prevArmInGame(PST.gameId, PST.armId) : null;
+  const firstOfNew = prev && !PST.editId
+    && !DB.bf.some(x=>x.gameId===PST.gameId && x.armId===PST.armId && !x.stub);
+  if (hint){
+    hint.style.display = (!on && firstOfNew) ? "block" : "none";
+    if (!on && firstOfNew) hint.innerHTML = `${esc(armName(PST.armId))} の最初の打者です。`
+      + `${esc(armName(prev))} が投げている途中で代わった打席なら、上の「打席の途中で投手交代」を押してください（初球は ${esc(armName(prev))} に付きます）。`;
+  }
   chipSet("#bfRelief", on ? "1" : "");
   $("#firstArmWrap").style.display = on ? "block" : "none";
   $("#selFirstArm").innerHTML = DB.arms.map(a=>
@@ -3657,7 +3677,9 @@ $("#btnAddArm").addEventListener("click", async ()=>{
 $("#bfRelief").addEventListener("click", ()=>{
   if (PST.firstArmId){ PST.firstArmId = null; }
   else {
-    const other = DB.arms.find(a=>a.id!==PST.armId) || DB.arms[0];
+    // 初期値は「この試合で、いまの投手の前に投げていた投手」
+    const prev = prevArmInGame(PST.gameId, PST.armId);
+    const other = prev ? {id:prev} : (DB.arms.find(a=>a.id!==PST.armId) || DB.arms[0]);
     PST.firstArmId = other ? other.id : null;
   }
   fillRelief();
@@ -3710,7 +3732,8 @@ $("#selArm").addEventListener("change", e=>{
     return;
   }
   pendingArm = null;
-  PST.armId = next; renderPSelectors(); updateBFNote();
+  if (PST.firstArmId && prev && next && prev !== next) PST.firstArmId = prev;
+  PST.armId = next; renderPSelectors(); fillRelief(); updateBFNote();
 });
 $("#selInning").addEventListener("change", e=>{
   setEditingBF(null); clearBF(); pendingArm = null;
@@ -3743,7 +3766,12 @@ $("#btnSaveBF").addEventListener("click", async ()=>{
       : `いま${already}アウトなので、この結果だと${already + addOuts}アウトになってしまいます。`);
     return;
   }
-  const fa = (PST.firstArmId && PST.firstArmId !== PST.armId) ? PST.firstArmId : null;
+  if (PST.firstArmId && PST.firstArmId === PST.armId){
+    note("bfNote", "「初球を投げた投手」が、いまの投手と同じになっています。交代前の投手を選ぶか、途中交代でなければ「打席の途中で投手交代」をもう一度押して外してください。");
+    $("#firstArmWrap").scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  const fa = PST.firstArmId || null;
   const rec = old
     ? { ...old, armId:PST.armId, lineup:PST.lineup||null, firstArmId:fa, bats:PST.bats||null,
         first:PST.first, result:PST.result }
@@ -3823,9 +3851,11 @@ $("#btnSaveInn").addEventListener("click", async ()=>{
     const savedInning = PST.inning, savedName = (curArm()||{}).name || "";
     if (pendingArm){                                   // 交代の続き
       const nn = (DB.arms.find(a=>a.id===pendingArm)||{}).name || "";
+      if (PST.firstArmId && PST.armId !== pendingArm) PST.firstArmId = PST.armId;   // 途中交代を押してあれば、初球は前の投手
       PST.armId = pendingArm; pendingArm = null;
       renderPAll();
-      note("innNote", `${savedName} の球数を保存しました。${nn} に交代しました。`);
+      note("innNote", `${savedName} の球数を保存しました。${nn} に交代しました。`
+        + `打席の途中で代わったときは、打者の入力で「打席の途中で投手交代」を押してください。`);
       startNewBF(suggestLineup(PST.gameId, PST.inning));
     } else if (!old && outsInInning(PST.gameId, PST.inning, null) >= 3){
       PST.inning = Math.min(20, savedInning + 1);      // 3アウトなら次の回へ
