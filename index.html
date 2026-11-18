@@ -1772,6 +1772,7 @@ function renderGames(){
   }
 }
 $("#selGame").addEventListener("change", e=>{
+  $("#geForm_b").style.display = "none";
   setEditing(null); clearPA();
   ST.gameId = e.target.value||null; ST.pitcherId = null; renderGames(); renderAll();
 });
@@ -1797,14 +1798,18 @@ document.addEventListener("click", async e=>{
       <div class="btnrow"><button class="btn" type="button" data-gesave="${t}">直した内容を保存</button>
         <button class="btn sec" type="button" data-gecancel="${t}">やめる</button></div>
       <div class="note" id="geNote_${t}"></div>`;
+    host.dataset.gid = g.id;            // どの試合を直しているかを覚えておく（途中で選び直しても取り違えない）
     host.style.display = "block"; $("#geOpp_" + t).focus();
     return;
   }
   const bs = e.target.closest("[data-gesave]"), bc = e.target.closest("[data-gecancel]");
   if (bc){ $("#geForm_" + bc.dataset.gecancel).style.display = "none"; return; }
   if (bs){
-    const t = bs.dataset.gesave, g = CACHE.games[curGameId(t)];
-    if (!g) return;
+    const t = bs.dataset.gesave, gid = $("#geForm_" + t).dataset.gid, g = CACHE.games[gid];
+    if (!g){   // 直している間に、ほかの人がこの試合を消した
+      $("#geForm_" + t).style.display = "none";
+      await tell("この試合は、ほかの人が消したため直せません。"); return;
+    }
     const date = $("#geDate_" + t).value, opp = $("#geOpp_" + t).value.trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ note("geNote_" + t, "日付を入れてください。"); return; }
     if (!opp){ note("geNote_" + t, "相手校を入れてください。"); $("#geOpp_" + t).focus(); return; }
@@ -2087,6 +2092,10 @@ async function writeFailed(e){
   if (e && e.status === 403){
     await tell((e && e.message) || "この操作は、いまのアカウントの権限では行えません。");
     return;
+  }
+  if (e && e.status === 409){            // 試合が消されていた：最新の状態を読み直す
+    await tell(e.message || "この試合は消されています。");
+    syncNow(true); return;
   }
   await tell("保存できませんでした。\n" + ((e && e.message) || "") +
              "\n通信状況を確認して、もう一度お試しください。");
@@ -3682,6 +3691,7 @@ $("#selBFResult").addEventListener("click", e=>{
 $("#btnCancelBF").addEventListener("click", ()=>{ setEditingBF(null); clearBF(); });
 $("#btnClearBF").addEventListener("click",  ()=>{ setEditingBF(null); clearBF(); });
 $("#selPGame").addEventListener("change", e=>{
+  $("#geForm_p").style.display = "none";
   setEditingBF(null); clearBF(); pendingArm = null;
   PST.gameId = e.target.value||null;
   PST.lineup = suggestLineup(PST.gameId, PST.inning);
